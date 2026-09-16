@@ -9,7 +9,7 @@ type SortKey = 'gap' | 'volume' | 'confidence';
 type Theme = 'daylight' | 'midnight' | 'chrome';
 
 const POLL_MS = 120_000;
-const THEME_KEY = 'gap369-theme';
+const THEME_KEY = 'gap133-theme';
 
 function fmtPct(v: number | null): string {
   return v !== null ? `${(v * 100).toFixed(1)}¢` : '—';
@@ -168,7 +168,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
         <div className="wrap hdr-in">
           <div className="logo">
             <span className="live-dot" aria-hidden="true" />
-            GAP<span>/</span>369
+            GAP<span>/</span>133
           </div>
           <div className="hdr-right">
             <nav className="hdr-nav">
@@ -218,7 +218,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
             One event. Two venues. <span className="hl">One number matters: the gap.</span>
           </h1>
           <p>
-            gap369 ranks the price difference between Polymarket and Kalshi on the same
+            gap133 ranks the price difference between Polymarket and Kalshi on the same
             prediction markets. We cover the overlap: if it trades on both venues, it&apos;s on
             the board; if it doesn&apos;t yet, it&apos;s in the watch below. Scanned every 2
             minutes. Data only, no trading, not financial advice.
@@ -445,7 +445,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
               </ul>
               <a
                 className="cta"
-                href="mailto:hello@gap369.xyz?subject=Founding desk access"
+                href="mailto:hello@gap133.xyz?subject=Founding desk access"
                 onClick={() => track('cta_click', 'founding_desk')}
               >
                 Pay with crypto →
@@ -455,7 +455,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
           <div className="paynote">
             <b>Payments:</b> founding-desk seats are settled in crypto (USDC / USDT / BTC / ETH).
             Checkout is currently manual while wallets are being wired: email{' '}
-            <a href="mailto:hello@gap369.xyz">hello@gap369.xyz</a>{' '}
+            <a href="mailto:hello@gap133.xyz">hello@gap133.xyz</a>{' '}
             and you get a payment address back, your month starts from on-chain confirmation. No
             cards, no auto-renew. <b>Not financial advice.</b> Data from the Polymarket and Kalshi
             public APIs; venues own their marks.
@@ -465,9 +465,9 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
 
       <footer className="ftr">
         <div className="wrap">
-          gap369 · a data terminal for cross-venue prediction markets. Nothing here is trading
+          gap133 · a data terminal for cross-venue prediction markets. Nothing here is trading
           advice or a solicitation. Markets move: verify on-venue before acting. ·{' '}
-          <a href="mailto:hello@gap369.xyz">contact</a>
+          <a href="mailto:hello@gap133.xyz">contact</a>
         </div>
       </footer>
     </>

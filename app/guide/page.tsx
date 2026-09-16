@@ -2,19 +2,19 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Field Guide - gap369',
+  title: 'Field Guide - gap133',
   description:
-    'What gap369 is, what the terminal shows, how to benefit from cross-venue gaps, free vs paid, and frequently asked questions.',
+    'What gap133 is, what the terminal shows, how to benefit from cross-venue gaps, free vs paid, and frequently asked questions.',
 };
 
 const FAQ: { q: string; a: string }[] = [
   {
-    q: 'Do I need a wallet or exchange account to use gap369?',
-    a: 'No. gap369 is read-only. It never asks for your wallet, your keys, your seed phrase, or an exchange login. Nothing on this site can move your money. You always trade on the venues themselves, through their own apps.',
+    q: 'Do I need a wallet or exchange account to use gap133?',
+    a: 'No. gap133 is read-only. It never asks for your wallet, your keys, your seed phrase, or an exchange login. Nothing on this site can move your money. You always trade on the venues themselves, through their own apps.',
   },
   {
     q: 'Is this financial advice?',
-    a: 'No. gap369 shows you a price difference and nothing else. What you do with it is your decision. Prediction markets involve real risk, including the risk of losing everything you stake. Nothing here is trading advice or a solicitation.',
+    a: 'No. gap133 shows you a price difference and nothing else. What you do with it is your decision. Prediction markets involve real risk, including the risk of losing everything you stake. Nothing here is trading advice or a solicitation.',
   },
   {
     q: 'Why do prices differ between Polymarket and Kalshi at all?',
@@ -22,7 +22,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'Is trading the gap risk-free?',
-    a: 'No, and be suspicious of anyone who says otherwise. Capturing a gap usually means holding positions on both venues, which introduces settlement timing, fee, and venue-risk considerations. gap369 shows you the signal; managing risk stays your job.',
+    a: 'No, and be suspicious of anyone who says otherwise. Capturing a gap usually means holding positions on both venues, which introduces settlement timing, fee, and venue-risk considerations. gap133 shows you the signal; managing risk stays your job.',
   },
   {
     q: 'How often does the data update?',
@@ -50,15 +50,15 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'How do I get a refund?',
-    a: 'Email hello@gap369.xyz within 7 days of payment and we will sort it out. We would rather refund fast than have an unhappy desk holder.',
+    a: 'Email hello@gap133.xyz within 7 days of payment and we will sort it out. We would rather refund fast than have an unhappy desk holder.',
   },
   {
     q: 'Is this available in my country?',
-    a: 'gap369 is a data service and works anywhere the site loads. But the venues themselves have their own restrictions: Polymarket restricts US traders, and Kalshi serves US residents. Check your venues terms before you trade. gap369 shows data; it does not grant trading access.',
+    a: 'gap133 is a data service and works anywhere the site loads. But the venues themselves have their own restrictions: Polymarket restricts US traders, and Kalshi serves US residents. Check your venues terms before you trade. gap133 shows data; it does not grant trading access.',
   },
   {
     q: 'Who built this?',
-    a: 'gap369 is an independent, bootstrapped product. No VC, no token, no roadmap promises. It makes money the honest way: people pay for the data because it is worth paying for.',
+    a: 'gap133 is an independent, bootstrapped product. No VC, no token, no roadmap promises. It makes money the honest way: people pay for the data because it is worth paying for.',
   },
 ];
 
@@ -72,9 +72,9 @@ export default function Guide() {
       </header>
 
       <section>
-        <h2>What gap369 is</h2>
+        <h2>What gap133 is</h2>
         <p>
-          gap369 is a cross-venue prediction market terminal. It watches two of the largest
+          gap133 is a cross-venue prediction market terminal. It watches two of the largest
           prediction markets in the world, Polymarket and Kalshi, at the same time, and shows you
           one number most traders never see clearly: the price gap on the same event between the
           two venues.
@@ -88,7 +88,7 @@ export default function Guide() {
           real-world event often trades at two different prices at the same moment.
         </p>
         <p>
-          That difference is the gap. gap369 finds it, measures it in cents, ranks every matched
+          That difference is the gap. gap133 finds it, measures it in cents, ranks every matched
           market by how wide the gap is, and refreshes the whole board continuously.
         </p>
       </section>
@@ -123,11 +123,11 @@ export default function Guide() {
           the market, because it comes from structure, not opinion.
         </p>
         <p>
-          Before gap369, that signal meant five browser tabs, two spreadsheets, and a group chat.
+          Before gap133, that signal meant five browser tabs, two spreadsheets, and a group chat.
           The board replaces the pile with one screen.
         </p>
         <p>
-          The habit: verify everything on-venue. gap369 is a data terminal, not a brokerage. The
+          The habit: verify everything on-venue. gap133 is a data terminal, not a brokerage. The
           venue chips exist so every number you act on can be checked at the source in seconds.
           Prices move; your edge depends on acting on live prices, not cached ones.
         </p>
@@ -157,7 +157,7 @@ export default function Guide() {
         </div>
         <p>
           Payment: USDC, USDT, BTC, or ETH. Checkout is currently manual while wallets are being
-          wired: email <a href="mailto:hello@gap369.xyz">hello@gap369.xyz</a> and you receive a
+          wired: email <a href="mailto:hello@gap133.xyz">hello@gap133.xyz</a> and you receive a
           payment address back. Your desk key arrives once the transaction confirms on-chain, and
           unlocks paid access in your browser for 30 days. No cards, no auto-renewals.
         </p>

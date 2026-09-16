@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 // The key rides in an httpOnly cookie so the server (not the client) decides
 // what's unlocked — the same check will gate /api/snapshot for the paid tier.
 
-export const KEY_COOKIE = 'gap369_key';
+export const KEY_COOKIE = 'gap133_key';
 
 export function deskKeyValid(key: string | undefined | null): boolean {
   if (!key) return false;

@@ -24,7 +24,7 @@ const gaScript = GA_ID
   : '';
 
 export const metadata: Metadata = {
-  title: 'gap369 - Cross-Venue Prediction Market Terminal',
+  title: 'gap133 - Cross-Venue Prediction Market Terminal',
   description:
     'Live odds and price gaps between Polymarket and Kalshi on the same events. Divergence ranking, unified order view, updated continuously.',
   icons: {
@@ -52,7 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   // The client refines on mount (and honours a saved choice).
   const initScript = `
     try {
-      var t = localStorage.getItem('gap369-theme');
+      var t = localStorage.getItem('gap133-theme');
       if (!t || t === 'chrome') t = matchMedia('(prefers-color-scheme: light)').matches ? 'daylight' : 'midnight';
       document.documentElement.dataset.theme = t;
     } catch (e) {

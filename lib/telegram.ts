@@ -1,4 +1,4 @@
-// Telegram broadcast layer for gap369. Posts to a public channel via a bot
+// Telegram broadcast layer for gap133. Posts to a public channel via a bot
 // Romil creates with BotFather. No-ops cleanly when unconfigured, so the app
 // runs fine before the bot exists.
 

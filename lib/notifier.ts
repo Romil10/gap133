@@ -7,14 +7,14 @@ import { sendToChannel, telegramConfigured } from './telegram';
 import { polymarketUrl, kalshiUrl } from './links';
 import type { MatchedPair } from './matcher';
 
-const THRESHOLD_CENTS = parseFloat(process.env.ALERT_THRESHOLD_CENTS ?? '3.69');
+const THRESHOLD_CENTS = parseFloat(process.env.ALERT_THRESHOLD_CENTS ?? '1.33');
 const ALERT_COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6h per pair
 const MAX_ALERTS_PER_RUN = 3;
 const DIGEST_HOUR_IST = parseInt(process.env.DIGEST_HOUR_IST ?? '9', 10); // 09:00 IST
 
 // Public URL of this terminal, used to link every digest/alert line back to
 // the board with the row pre-highlighted (?m=<kx ticker>).
-const SITE_URL = (process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://gap369-production.up.railway.app').replace(/\/$/, '');
+const SITE_URL = (process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'https://gap133-production.up.railway.app').replace(/\/$/, '');
 
 function boardUrl(p: MatchedPair): string {
   return `${SITE_URL}/?m=${encodeURIComponent(p.kx.ticker)}`;
@@ -59,7 +59,7 @@ export async function runAlerts(snap: Snapshot): Promise<number> {
     const text =
       `<b>gap alert · ${(p.gapCents ?? 0).toFixed(1)}¢</b>\n` +
       pairLine(p) +
-      `\n<a href="${boardUrl(p)}">open in gap369↗</a> · <a href="${kalshiUrl(p.kx)}">kalshi↗</a> · <a href="${polymarketUrl(p.pm) ?? ''}">polymarket↗</a>\n` +
+      `\n<a href="${boardUrl(p)}">open in gap133↗</a> · <a href="${kalshiUrl(p.kx)}">kalshi↗</a> · <a href="${polymarketUrl(p.pm) ?? ''}">polymarket↗</a>\n` +
       `not financial advice · verify on-venue`;
     const delivered = await sendToChannel(text);
     if (delivered) sent++;
@@ -88,7 +88,7 @@ export async function maybeDigest(snap: Snapshot): Promise<boolean> {
     (p, i) => `${i + 1}. <a href="${boardUrl(p)}">${esc(p.pm.question.slice(0, 60))}</a>\nkx ${(p.kxYes !== null ? (p.kxYes * 100).toFixed(1) : '?')}¢ vs pm ${(p.pmYes !== null ? (p.pmYes * 100).toFixed(1) : '?')}¢ → <b>${(p.gapCents ?? 0).toFixed(1)}¢</b>`
   );
   const text =
-    `<b>gap369 daily · top gaps</b>\n\n` +
+    `<b>gap133 daily · top gaps</b>\n\n` +
     lines.join('\n\n') +
     `\n\nscan of ${snap.kxCount} kalshi + ${snap.pmCount} polymarket markets · ${snap.pairs.length} pairs matched\n` +
     `<a href="${SITE_URL}/">open the full board↗</a> · not financial advice · verify on-venue`;

@@ -10,7 +10,7 @@ export async function GET() {
   const unlocked = await isUnlocked();
   if (!unlocked) {
     return NextResponse.json(
-      { error: 'desk key required', hint: 'founders desk: $15/mo, crypto only. hello@gap369.xyz' },
+      { error: 'desk key required', hint: 'founders desk: $15/mo, crypto only. hello@gap133.xyz' },
       { status: 401 }
     );
   }

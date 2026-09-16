@@ -1,8 +1,8 @@
-# gap369
+# gap133
 
 Cross-venue prediction market terminal: live odds and price gaps between
-Polymarket and Kalshi on the same events, ranked in cents. Domain: gap369.xyz
-(pending purchase). The daily ritual this product hands you: the "3.69c gap of
+Polymarket and Kalshi on the same events, ranked in cents. Domain: gap133.xyz
+(pending purchase). The daily ritual this product hands you: the "1.33c gap of
 the day" post, every day, from real data.
 
 ## What is running
@@ -56,4 +56,3 @@ set up. Auto-renewal and automated confirmation are deliberate later additions.
   dropped from the board until manually approved.
 - Prices shown are mid/bid snapshots; per-venue tick sizes differ.
 
-(v3)

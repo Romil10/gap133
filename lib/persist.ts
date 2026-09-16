@@ -1,4 +1,4 @@
-// Postgres persistence for gap369. Every scanner cycle records the full pair
+// Postgres persistence for gap133. Every scanner cycle records the full pair
 // set; history queries merge recorded data with venue APIs so charts extend
 // beyond Polymarket's native ~1-month limit as the database grows.
 // Durable analytics (events) and alert history live here too.
