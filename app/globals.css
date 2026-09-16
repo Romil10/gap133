@@ -457,6 +457,26 @@ html[data-theme="daylight"] .cta.ghost:hover { transform: none; box-shadow: var(
 }
 .paynote b { color: var(--text); }
 
+/* ---------- single-venue watch ---------- */
+.watchgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); }
+@media (max-width: 1000px) { .watchgrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .watchgrid { grid-template-columns: 1fr; } }
+.watchitem {
+  background: var(--panel-2); padding: 12px 14px;
+  transition: background .2s;
+  display: block;
+}
+.watchitem:hover { background: color-mix(in srgb, var(--accent) 10%, var(--panel-2)); }
+.watchitem .wq {
+  color: var(--text); font-size: 12px; line-height: 1.45;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  min-height: 2.7em;
+}
+.watchitem .wv {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.06em;
+  color: var(--muted); margin-top: 7px; text-transform: uppercase;
+}
+
 /* ---------- expandable analytics drawer ---------- */
 tbody tr.exp td { background: color-mix(in srgb, var(--accent) 7%, transparent); border-bottom-color: var(--line-bright); }
 .drawer-tr td { background: var(--panel-2); padding: 0 !important; }

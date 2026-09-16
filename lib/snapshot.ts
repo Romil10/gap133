@@ -1,6 +1,7 @@
 import { fetchPolymarketTop, PMMarket } from './polymarket';
 import { fetchKalshiTop, KXMarket } from './kalshi';
 import { matchVenues, MatchedPair } from './matcher';
+import { kalshiUrl, polymarketUrl } from './links';
 
 export interface Snapshot {
   pairs: MatchedPair[];
@@ -11,6 +12,15 @@ export interface Snapshot {
   // rendering an empty board as if it were normal data.
   pmHealthy: boolean;
   kxHealthy: boolean;
+  // single-venue watch: hottest markets with NO cross-venue overlap. The
+  // overlap is the product; this is the "future gaps" strip. Each entry keeps
+  // enough data to deep-link its venue.
+  watch: {
+    venue: 'kx' | 'pm';
+    title: string;
+    venueUrl: string;
+    volume: number;
+  }[];
 }
 
 // Simple in-process cache; the UI revalidates on a timer.
@@ -69,8 +79,87 @@ function pushRing(snap: Snapshot) {
   if (cacheRing.length > RING_MAX) cacheRing.shift();
 }
 
-export async function getSnapshot(maxAgeMs = 120_000): Promise<Snapshot> {
-  if (cache && Date.now() - new Date(cache.fetchedAt).getTime() < maxAgeMs) return cache;
+// Build the single-venue watch: top markets by volume with no cross-venue
+// counterpart. Normalized-token overlap test against matched questions, plus
+// exclusion of anything already paired. Kept cheap: top 8 per venue.
+function buildWatch(
+  kx: KXMarket[],
+  pm: PMMarket[],
+  matched: MatchedPair[]
+): Snapshot['watch'] {
+  const matchedKx = new Set(matched.map((p) => p.kx.ticker));
+  const matchedPm = new Set(matched.map((p) => p.pm.id));
+  const pmQuestions = new Set(pm.map((m) => normalizeQ(m.question)));
+
+  const normCache = new Map<string, Set<string>>();
+  const toks = (s: string): Set<string> => {
+    let v = normCache.get(s);
+    if (!v) {
+      v = new Set(s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean));
+      normCache.set(s, v);
+    }
+    return v;
+  };
+
+  const overlapsPm = (title: string): boolean => {
+    const a = toks(title);
+    if (!a.size) return false;
+    for (const q of pmQuestions) {
+      let inter = 0;
+      for (const t of a) if (q.has(t)) inter++;
+      if (inter / Math.max(1, a.size) > 0.55) return true;
+    }
+    return false;
+  };
+
+  const watch: Snapshot['watch'] = [];
+
+  // Kalshi-only: real-volume markets whose topic isn't on Polymarket at all
+  const kxSorted = [...kx].filter((m) => !matchedKx.has(m.ticker) && m.volume > 0);
+  kxSorted.sort((a, b) => b.volume - a.volume);
+  for (const m of kxSorted) {
+    if (watch.length >= 8) break;
+    if (overlapsPm(`${m.title} ${m.eventTitle}`)) continue;
+    watch.push({
+      venue: 'kx',
+      title: m.title || m.eventTitle,
+      venueUrl: `https://kalshi.com/markets/${(m.ticker.split('-')[0] || m.ticker).toLowerCase()}/${m.ticker.toLowerCase()}`,
+      volume: m.volume,
+    });
+  }
+
+  // Polymarket-only: top by 24h volume without a kalshi partner
+  const kxTitles = kx.map((m) => `${m.title} ${m.eventTitle}`);
+  const kxTok = kxTitles.map((t) => toks(t));
+  const pmSorted = [...pm]
+    .filter((m) => !matchedPm.has(m.id) && (m.volume24hr ?? 0) > 0)
+    .sort((a, b) => (b.volume24hr ?? 0) - (a.volume24hr ?? 0));
+  for (const m of pmSorted) {
+    if (watch.length >= 16) break;
+    const a = toks(m.question);
+    let hasPartner = false;
+    for (const kt of kxTok) {
+      let inter = 0;
+      for (const t of a) if (kt.has(t)) inter++;
+      if (inter / Math.max(1, a.size) > 0.55) { hasPartner = true; break; }
+    }
+    if (hasPartner) continue;
+    watch.push({
+      venue: 'pm',
+      title: m.question,
+      venueUrl: polymarketUrl(m) ?? 'https://polymarket.com',
+      volume: m.volume24hr ?? 0,
+    });
+  }
+
+  return watch;
+}
+
+function normalizeQ(s: string): Set<string> {
+  return new Set(s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean));
+}
+
+export async function getSnapshot(maxAgeMs = 120_000): Promise<Snapshot> {  if (cache && Date.now() - new Date(cache.fetchedAt).getTime() < maxAgeMs) return cache;
   if (inflight) return inflight;
 
   inflight = (async () => {
@@ -93,6 +182,7 @@ export async function getSnapshot(maxAgeMs = 120_000): Promise<Snapshot> {
       pmHealthy,
       kxHealthy,
       fetchedAt: new Date().toISOString(),
+      watch: buildWatch(kx, pm, pairs),
     };
     cache = snap;
     pushRing(snap);

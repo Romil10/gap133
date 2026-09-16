@@ -219,9 +219,9 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
           </h1>
           <p>
             gap369 ranks the price difference between Polymarket and Kalshi on the same
-            prediction markets. Scanned every 2 minutes from both venues&apos; public order books.
-            {unlocked ? ' Desk feed: live.' : ' Observer feed: 10-minute delay, top pairs.'} Data
-            only, no trading, not financial advice.
+            prediction markets. We cover the overlap: if it trades on both venues, it&apos;s on
+            the board; if it doesn&apos;t yet, it&apos;s in the watch below. Scanned every 2
+            minutes. Data only, no trading, not financial advice.
           </p>
         </section>
 
@@ -387,6 +387,31 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
             </table>
           </div>
         </div>
+
+        {meta.watch && meta.watch.length > 0 && !searching && (
+          <div className="panel">
+            <div className="panel-h">
+              <span>Single-venue watch · hottest markets the overlap hasn&apos;t reached yet</span>
+            </div>
+            <div className="watchgrid">
+              {meta.watch.slice(0, 8).map((w, i) => (
+                <a
+                  key={i}
+                  className="watchitem"
+                  href={w.venueUrl}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  onClick={() => track('watch_click', w.venue)}
+                >
+                  <div className="wq">{w.title}</div>
+                  <div className="wv">
+                    {w.venue === 'kx' ? 'kalshi' : 'polymarket'} · ${Math.round(w.volume).toLocaleString()} · awaiting the other venue
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         <section id="pricing" style={{ paddingTop: 30 }}>
           <div className="hero" style={{ paddingBottom: 4 }}>
