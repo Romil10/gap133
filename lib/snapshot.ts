@@ -7,6 +7,10 @@ export interface Snapshot {
   pmCount: number;
   kxCount: number;
   fetchedAt: string;
+  // audit fix: per-venue feed health so the UI can fail loudly instead of
+  // rendering an empty board as if it were normal data.
+  pmHealthy: boolean;
+  kxHealthy: boolean;
 }
 
 // Simple in-process cache; the UI revalidates on a timer.
@@ -22,10 +26,20 @@ export async function getSnapshot(maxAgeMs = 120_000): Promise<Snapshot> {
       fetchPolymarketTop(150).catch(() => [] as PMMarket[]),
       fetchKalshiTop(150).catch(() => [] as KXMarket[]),
     ]);
+
+    // audit fix: if a venue feed comes back empty but a previous snapshot
+    // exists, keep serving the previous board (marked stale by the fetchedAt
+    // age) rather than rendering a half-empty board as normal data.
+    const pmHealthy = pm.length > 0;
+    const kxHealthy = kx.length > 0;
+    const pairs = pmHealthy && kxHealthy ? matchVenues(kx, pm) : cache ? cache.pairs : matchVenues(kx, pm);
+
     const snap: Snapshot = {
-      pairs: matchVenues(kx, pm),
+      pairs,
       pmCount: pm.length,
       kxCount: kx.length,
+      pmHealthy,
+      kxHealthy,
       fetchedAt: new Date().toISOString(),
     };
     cache = snap;

@@ -4,6 +4,7 @@ const PM_BASE = 'https://gamma-api.polymarket.com';
 export interface PMMarket {
   id: string;
   question: string;
+  outcomes: string | null;
   outcomePrices: string | null;
   volume24hr: number | null;
   volume: number | null;
@@ -31,6 +32,7 @@ export async function fetchPolymarketTop(limit = 150): Promise<PMMarket[]> {
     .map((m) => ({
       id: m.id,
       question: m.question,
+      outcomes: m.outcomes ?? null,
       outcomePrices: m.outcomePrices ?? null,
       volume24hr: m.volume24hr ?? 0,
       volume: m.volume ?? 0,
@@ -45,6 +47,22 @@ export function pmYesPrice(m: PMMarket): number | null {
   try {
     const arr = JSON.parse(m.outcomePrices);
     const v = parseFloat(arr[0]);
+    return Number.isFinite(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+// audit fix (A8): outcomePrices[0] is only "Yes" if the outcomes array says so.
+// Neg-risk and secondary markets can order outcomes differently; a blind [0]
+// read inverts every gap on those rows.
+export function pmYesPriceChecked(m: PMMarket): number | null {
+  if (!m.outcomePrices || !m.outcomes) return null;
+  try {
+    const outcomes: string[] = JSON.parse(m.outcomes);
+    const prices: string[] = JSON.parse(m.outcomePrices);
+    const i = outcomes.findIndex((o) => o.toLowerCase() === 'yes');
+    if (i === -1) return null;
+    const v = parseFloat(prices[i]);
     return Number.isFinite(v) ? v : null;
   } catch {
     return null;

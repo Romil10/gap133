@@ -1,8 +1,10 @@
-// Cross-venue matcher: port of the validated Python prototype.
-// Score = 0.5 * token Jaccard + 0.3 * SequenceMatcher + 0.25 name-overlap boost.
-// >= 0.65 is auto-match; 0.45-0.65 goes to the review queue.
+// Cross-venue matcher: port of the validated Python prototype, hardened after
+// the 2026-09-16 audit (false party-vs-person match ranked #1 on the board).
+// Score = 0.5 * token Jaccard + 0.3 * sequence ratio + 0.25 proper-name boost,
+// minus 0.25 when one side asks a nomination question and the other an election
+// question. >= 0.65 auto-match (plus sanity caps), 0.45-0.65 review band.
 
-import { PMMarket, pmYesPrice } from './polymarket';
+import { PMMarket, pmYesPriceChecked } from './polymarket';
 import { KXMarket } from './kalshi';
 
 const STOP = new Set(`will the of in on for a an to be at by this that is are was were do does
@@ -53,7 +55,11 @@ export interface MatchedPair {
   pmYes: number | null;
   gapCents: number | null;
   needsReview: boolean;
+  reviewReason?: string;
 }
+
+const NOMIN = /\bnominee|nomination\b/i;
+const PARTY = /\bparty\b/i;
 
 export function matchVenues(kalshi: KXMarket[], polymarket: PMMarket[]): MatchedPair[] {
   const scored: { kx: KXMarket; pm: PMMarket; s: number }[] = [];
@@ -62,18 +68,34 @@ export function matchVenues(kalshi: KXMarket[], polymarket: PMMarket[]): Matched
     toks: norm(p.question),
     joined: norm(p.question).join(' '),
     names: names(p.question),
+    nomin: NOMIN.test(p.question),
+    party: PARTY.test(p.question),
   }));
 
   for (const k of kalshi) {
     const combined = `${k.title} ${k.eventTitle}`;
     const ktoks = norm(combined);
     const kjoined = ktoks.join(' ');
-    const knames = names(combined);
+    // audit fix: proper names come from the MARKET title only. Event titles are
+    // templates ("2028 Democratic presidential nominee") and their words poisoned
+    // the name boost, producing the party-vs-person false match at board #1.
+    const knames = names(k.title ?? '');
+    const kNomin = NOMIN.test(k.title ?? '');
+    const kParty = PARTY.test(k.title ?? '') || PARTY.test(k.eventTitle ?? '');
+
     for (const cand of pmPrepped) {
+      // audit fix: hard-block cross-type pairs. A party question can never be
+      // the same event as a person question, and vice versa.
+      if (kParty !== cand.party) continue;
+
       let s =
         jaccard(ktoks, cand.toks) * 0.5 +
         seqRatio(kjoined, cand.joined) * 0.3;
       for (const n of knames) if (cand.names.has(n)) { s += 0.25; break; }
+      // audit fix: "nominee/nomination" on one side against "president/election"
+      // phrasing on the other marks a subtly different question; demote hard.
+      if (kNomin !== cand.nomin) s -= 0.25;
+
       if (s >= 0.45) scored.push({ kx: k, pm: cand.p, s: Math.min(s, 1) });
     }
   }
@@ -85,12 +107,17 @@ export function matchVenues(kalshi: KXMarket[], polymarket: PMMarket[]): Matched
     usedK.add(kx.ticker);
     usedP.add(pm.id);
     const kxYes = kx.yesBid;
-    const pmYes = pmYesPrice(pm);
-    out.push({
-      kx, pm, score: s, kxYes, pmYes,
-      gapCents: kxYes !== null && pmYes !== null ? Math.abs(kxYes - pmYes) * 100 : null,
-      needsReview: s < 0.65,
-    });
+    const pmYes = pmYesPriceChecked(pm);
+    const gapCents = kxYes !== null && pmYes !== null ? Math.abs(kxYes - pmYes) * 100 : null;
+    let needsReview = s < 0.65;
+    let reviewReason = needsReview ? 'below auto-match confidence' : undefined;
+    // audit fix: the same question on two real venues essentially never disagrees
+    // by 25c+; a gap that wide almost always means mismatched questions.
+    if (!needsReview && gapCents !== null && gapCents > 25) {
+      needsReview = true;
+      reviewReason = `implausible gap (${gapCents.toFixed(1)}c) — likely mismatched questions`;
+    }
+    out.push({ kx, pm, score: s, kxYes, pmYes, gapCents, needsReview, reviewReason });
   }
   return out;
 }
