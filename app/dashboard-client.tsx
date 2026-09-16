@@ -129,6 +129,21 @@ export default function Dashboard({ snap, unlocked }: { snap: Snapshot; unlocked
   const feedBad = !meta.pmHealthy || !meta.kxHealthy;
   const staleAge = Date.now() - new Date(meta.fetchedAt).getTime();
 
+  // Deep-link highlight: /?m=<kx ticker> scrolls to and flashes that row.
+  // Telegram digests and alerts link here per market.
+  const [hlKey, setHlKey] = useState<string | null>(null);
+  useEffect(() => {
+    const m = new URLSearchParams(window.location.search).get('m');
+    if (!m) return;
+    const key = pairs.find((p) => p.kx.ticker.toUpperCase() === m.toUpperCase());
+    if (!key) return;
+    const k = key.kx.ticker + key.pm.id;
+    setHlKey(k);
+    const t = setTimeout(() => setHlKey(null), 6000);
+    try { document.getElementById('row-' + k)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch {}
+    return () => clearTimeout(t);
+  }, [pairs]);
+
   return (
     <>
       <header className="hdr">
@@ -257,8 +272,13 @@ export default function Dashboard({ snap, unlocked }: { snap: Snapshot; unlocked
                 {sorted.map((p) => {
                   const gap = p.gapCents ?? 0;
                   const reviewNote = p.reviewReason;
+                  const rowKey = p.kx.ticker + p.pm.id;
                   return (
-                    <tr key={p.kx.ticker + p.pm.id} className={flashClass(p)}>
+                    <tr
+                      key={rowKey}
+                      id={'row-' + rowKey}
+                      className={`${flashClass(p)} ${hlKey === rowKey ? 'hl' : ''}`}
+                    >
                       <td className="q">
                         <div className="main">{p.pm.question}</div>
                         <div className="sub">

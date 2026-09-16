@@ -331,6 +331,11 @@ tbody tr { transition: background 0.4s; }
 tbody tr:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
 tbody tr.flash-up td { background: color-mix(in srgb, var(--green) 10%, transparent); transition: background 0.15s; }
 tbody tr.flash-down td { background: color-mix(in srgb, var(--red) 10%, transparent); transition: background 0.15s; }
+tbody tr.hl td {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  transition: background 1.2s;
+}
+html[data-theme="daylight"] tbody tr.hl td { background: color-mix(in srgb, var(--accent) 45%, transparent); }
 html[data-theme="daylight"] tbody tr:hover td { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 
 .q { max-width: 360px; }
