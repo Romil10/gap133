@@ -262,6 +262,9 @@ html[data-theme="daylight"] .notice { border: 2px solid var(--text); color: var(
   color: var(--red);
 }
 html[data-theme="daylight"] .notice.bad { color: var(--red); background: color-mix(in srgb, var(--red) 8%, transparent); }
+.notice.upsell { border-color: var(--accent); color: var(--text); }
+.notice.upsell a { color: var(--accent); text-decoration: underline; font-weight: 700; }
+html[data-theme="midnight"] .notice.upsell { border-color: var(--accent); color: var(--text); }
 
 /* ---------- stat strip ---------- */
 .statrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--border-w); background: var(--line); border: var(--border-w) solid var(--line-bright); margin: 20px 0; }

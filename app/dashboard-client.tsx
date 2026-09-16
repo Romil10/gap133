@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Snapshot } from '../lib/snapshot';
+import type { Snapshot, TieredSnapshot } from '../lib/snapshot';
 import type { MatchedPair } from '../lib/matcher';
 import { polymarketUrl, kalshiUrl } from '../lib/links';
 
@@ -29,10 +29,10 @@ function track(e: string, d?: string) {
 
 // Desk-key access is server-checked via the httpOnly cookie set by /api/unlock;
 // the page passes `unlocked` down so the theme switch reflects real access.
-export default function Dashboard({ snap, unlocked }: { snap: Snapshot; unlocked: boolean }) {
+export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; unlocked: boolean }) {
   const [sort, setSort] = useState<SortKey>('gap');
   const [pairs, setPairs] = useState<MatchedPair[]>(snap.pairs);
-  const [meta, setMeta] = useState<Snapshot>(snap);
+  const [meta, setMeta] = useState<TieredSnapshot>(snap);
   const [refreshing, setRefreshing] = useState(false);
   const [nextIn, setNextIn] = useState(POLL_MS / 1000);
   // audit fix (A5): the review band is disclosed, not hidden
@@ -73,7 +73,7 @@ export default function Dashboard({ snap, unlocked }: { snap: Snapshot; unlocked
     try {
       const res = await fetch('/api/snapshot', { cache: 'no-store' });
       if (res.ok) {
-        const fresh: Snapshot = await res.json();
+        const fresh: TieredSnapshot = await res.json();
         prevRef.current = new Map(pairs.map((p) => [p.kx.ticker + p.pm.id, p.gapCents ?? 0]));
         setPairs(fresh.pairs);
         setMeta(fresh);
@@ -201,9 +201,10 @@ export default function Dashboard({ snap, unlocked }: { snap: Snapshot; unlocked
             One event. Two venues. <span className="hl">One number matters: the gap.</span>
           </h1>
           <p>
-            gap369 ranks the live price difference between Polymarket and Kalshi on the same
+            gap369 ranks the price difference between Polymarket and Kalshi on the same
             prediction markets. Scanned every 2 minutes from both venues&apos; public order books.
-            Data only, no trading, not financial advice.
+            {unlocked ? ' Desk feed: live.' : ' Observer feed: 10-minute delay, top pairs.'} Data
+            only, no trading, not financial advice.
           </p>
         </section>
 
@@ -221,6 +222,14 @@ export default function Dashboard({ snap, unlocked }: { snap: Snapshot; unlocked
             <button onClick={() => setShowReview(!showReview)}>
               {showReview ? 'hide review band' : 'inspect them'}
             </button>
+          </div>
+        )}
+        {!unlocked && meta.totalPairs > meta.pairs.length && (
+          <div className="notice upsell" role="status">
+            Free tier: top {meta.pairs.length} of {meta.totalPairs} pairs,
+            {' '}{meta.delayed ? 'delayed 10 minutes' : 'warming up the delay buffer'}. The desk
+            tier gets every pair live, gap alerts, history and API.
+            <a href="#pricing" onClick={() => track('upsell_click')}>see the desk tier</a>
           </div>
         )}
 
@@ -547,3 +556,4 @@ function VolumeChart({ points }: { points: VolumePoint[] }) {
     </svg>
   );
 }
+

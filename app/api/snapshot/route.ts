@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getSnapshot } from '../../../lib/snapshot';
+import { getTieredSnapshot } from '../../../lib/snapshot';
+import { isUnlocked } from '../../../lib/access';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const snap = await getSnapshot();
+  const unlocked = await isUnlocked();
+  const snap = await getTieredSnapshot(unlocked);
   return NextResponse.json(snap);
 }
