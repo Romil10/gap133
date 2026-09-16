@@ -95,15 +95,32 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
 
   const confident = useMemo(() => pairs.filter((p) => !p.needsReview), [pairs]);
   const review = useMemo(() => pairs.filter((p) => p.needsReview), [pairs]);
+  // search: keyword filter across question text, event title, and tickers
+  const [query, setQuery] = useState('');
+  const searching = query.trim().length > 0;
+  const matchQuery = (p: MatchedPair, q: string): boolean => {
+    const hay = `${p.pm.question} ${p.kx.eventTitle} ${p.kx.title} ${p.kx.ticker}`.toLowerCase();
+    // every whitespace-separated term must appear (AND semantics)
+    return q.toLowerCase().split(/\s+/).filter(Boolean).every((t) => hay.includes(t));
+  };
+  const filteredConf = useMemo(
+    () => (searching ? confident.filter((p) => matchQuery(p, query)) : confident),
+    [confident, query, searching]
+  );
+  const filteredRev = useMemo(
+    () => (searching ? review.filter((p) => matchQuery(p, query)) : review),
+    [review, query, searching]
+  );
   const sorted = useMemo(() => {
-    const arr = [...(showReview ? review : confident)];
+    const pool = showReview ? filteredRev : filteredConf;
+    const arr = [...pool];
     arr.sort((a, b) => {
       if (sort === 'gap') return (b.gapCents ?? -1) - (a.gapCents ?? -1);
       if (sort === 'volume') return (b.pm.volume24hr ?? 0) - (a.pm.volume24hr ?? 0);
       return b.score - a.score;
     });
     return arr;
-  }, [confident, review, showReview, sort]);
+  }, [filteredConf, filteredRev, showReview, sort]);
 
   const gaps = confident.map((p) => p.gapCents ?? 0);
   const biggest = gaps.length ? Math.max(...gaps) : 0;
@@ -254,13 +271,29 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
 
         <div className="panel">
           <div className="panel-h">
-            <span>{showReview ? 'Review band (held back from the main board)' : 'Cross-venue divergence board'}</span>
-            <span className="sortbtns">
-              {(['gap', 'volume', 'confidence'] as SortKey[]).map((k) => (
-                <button key={k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>
-                  {k}
-                </button>
-              ))}
+            <span>
+              {searching
+                ? `Search: ${sorted.length} result${sorted.length === 1 ? '' : 's'} for "${query}"`
+                : showReview
+                  ? 'Review band (held back from the main board)'
+                  : 'Cross-venue divergence board'}
+            </span>
+            <span className="board-ctl">
+              <input
+                type="search"
+                className="searchbox"
+                placeholder="search markets…"
+                value={query}
+                onChange={(e) => { setQuery(e.target.value); if (!searching && e.target.value) track('search'); }}
+                aria-label="Search markets by keyword"
+              />
+              <span className="sortbtns">
+                {(['gap', 'volume', 'confidence'] as SortKey[]).map((k) => (
+                  <button key={k} className={sort === k ? 'on' : ''} onClick={() => { setSort(k); track('sort', k); }}>
+                    {k}
+                  </button>
+                ))}
+              </span>
             </span>
           </div>
           <div className="tblwrap">

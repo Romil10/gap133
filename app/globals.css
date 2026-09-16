@@ -297,6 +297,20 @@ html[data-theme="chrome"] .panel { background: var(--chrome-panel), var(--panel)
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted);
 }
 .sortbtns { display: flex; gap: 8px; }
+.board-ctl { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.searchbox {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text);
+  background: var(--panel-2);
+  border: var(--border-w) solid var(--line-bright);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  width: 190px;
+  outline: none;
+}
+.searchbox:focus { border-color: var(--accent); }
+.searchbox::placeholder { color: var(--faint); }
 .sortbtns button {
   background: none;
   border: var(--border-w) solid transparent;
@@ -563,6 +577,31 @@ html[data-theme="chrome"] .faq summary::before { content: '+'; color: var(--acce
 html[data-theme="midnight"] .faq details[open] summary::before { content: '\2304'; }
 .faq summary::-webkit-details-marker { display: none; }
 .faq details p { padding: 0 16px 15px; margin: 0; color: var(--muted); font-size: 13.5px; }
+
+/* ---------- daylight contrast fixes (audit: 2026-09-16) ---------- */
+/* "One number matters: the gap." needs a solid chip on paper, the acid
+   underline alone failed against the light background. */
+html[data-theme="daylight"] .hero h1 .hl {
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 0 8px 2px;
+  text-decoration: none;
+  box-shadow: 3px 3px 0 var(--text);
+  display: inline-block;
+}
+html[data-theme="daylight"] .notice.upsell a,
+html[data-theme="daylight"] .backlink:hover,
+html[data-theme="daylight"] .ftr a,
+html[data-theme="daylight"] .guide a {
+  color: var(--text);
+  background: var(--accent);
+  text-decoration: none;
+  padding: 1px 6px;
+  box-shadow: 2px 2px 0 var(--text);
+}
+html[data-theme="daylight"] .notice.upsell a { font-weight: 700; }
+/* tier li markers and chart labels on daylight keep their colour but darken */
+html[data-theme="daylight"] .tier li::before { color: #5E6B00; }
 
 /* ---------- mobile ---------- */
 @media (max-width: 720px) {
