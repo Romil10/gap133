@@ -55,3 +55,4 @@ set up. Auto-renewal and automated confirmation are deliberate later additions.
 - The matcher review band (0.45-0.65) is displayed nowhere yet; those pairs are
   dropped from the board until manually approved.
 - Prices shown are mid/bid snapshots; per-venue tick sizes differ.
+
