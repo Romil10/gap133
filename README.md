@@ -56,3 +56,4 @@ set up. Auto-renewal and automated confirmation are deliberate later additions.
   dropped from the board until manually approved.
 - Prices shown are mid/bid snapshots; per-venue tick sizes differ.
 
+(v2)
