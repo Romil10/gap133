@@ -6,8 +6,10 @@ import type { MatchedPair } from '../lib/matcher';
 import { polymarketUrl, kalshiUrl } from '../lib/links';
 
 type SortKey = 'gap' | 'volume' | 'confidence';
+type Theme = 'daylight' | 'midnight' | 'chrome';
 
 const POLL_MS = 120_000;
+const THEME_KEY = 'gap369-theme';
 
 function fmtPct(v: number | null): string {
   return v !== null ? `${(v * 100).toFixed(1)}¢` : '—';
@@ -25,6 +27,12 @@ function track(e: string, d?: string) {
   } catch {}
 }
 
+// Desk keys (crypto-paid seats) unlock the chrome theme; v0 keeps them in
+// localStorage until the access-key gate replaces this.
+function deskKeyUnlocked(): boolean {
+  try { return !!localStorage.getItem('gap369-desk-key'); } catch { return false; }
+}
+
 export default function Dashboard({ snap }: { snap: Snapshot }) {
   const [sort, setSort] = useState<SortKey>('gap');
   const [pairs, setPairs] = useState<MatchedPair[]>(snap.pairs);
@@ -33,7 +41,36 @@ export default function Dashboard({ snap }: { snap: Snapshot }) {
   const [nextIn, setNextIn] = useState(POLL_MS / 1000);
   // audit fix (A5): the review band is disclosed, not hidden
   const [showReview, setShowReview] = useState(false);
+  // theme: daylight | midnight | chrome (chrome needs a desk key)
+  const [theme, setTheme] = useState<Theme>('midnight');
+  const chromeUnlocked = useRef(false);
   const prevRef = useRef<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    chromeUnlocked.current = deskKeyUnlocked();
+    try {
+      const saved = localStorage.getItem(THEME_KEY) as Theme | null;
+      if (saved) {
+        if (saved === 'chrome' && !chromeUnlocked.current) { localStorage.removeItem(THEME_KEY); }
+        else { setTheme(saved); document.documentElement.dataset.theme = saved; return; }
+      }
+    } catch {}
+    const prefersLight = window.matchMedia?.('(prefers-color-scheme: light)').matches;
+    const initial: Theme = prefersLight ? 'daylight' : 'midnight';
+    setTheme(initial);
+    document.documentElement.dataset.theme = initial;
+  }, []);
+
+  const applyTheme = (t: Theme) => {
+    if (t === 'chrome' && !chromeUnlocked.current) {
+      track('chrome_locked');
+      return;
+    }
+    setTheme(t);
+    document.documentElement.dataset.theme = t;
+    try { localStorage.setItem(THEME_KEY, t); } catch {}
+    track('theme', t);
+  };
 
   const poll = async () => {
     setRefreshing(true);
@@ -105,9 +142,22 @@ export default function Dashboard({ snap }: { snap: Snapshot }) {
             <span className="live-dot" aria-hidden="true" />
             GAP<span>/</span>369
           </div>
-          <nav className="hdr-nav">
-            <a href="#terminal">Terminal</a>
-            <a href="#pricing">Access</a>
+          <div className="hdr-right">
+            <nav className="hdr-nav">
+              <a href="#terminal">Terminal</a>
+              <a href="#pricing">Access</a>
+            </nav>
+            <div className="themesw" role="group" aria-label="Theme">
+              <button className={theme === 'daylight' ? 'on' : ''} onClick={() => applyTheme('daylight')} title="Daylight">Day</button>
+              <button className={theme === 'midnight' ? 'on' : ''} onClick={() => applyTheme('midnight')} title="Midnight Tape">Nite</button>
+              <button
+                className={theme === 'chrome' ? 'on' : ''}
+                onClick={() => applyTheme('chrome')}
+                title={chromeUnlocked.current ? 'Chrome Ledger' : 'Chrome Ledger: desk-key holders only'}
+              >
+                {chromeUnlocked.current ? 'Chrome' : 'Chrome🔒'}
+              </button>
+            </div>
             <span
               className={`scanchip ${refreshing ? 'refreshing' : ''}`}
               title={staleAge > 10 * 60_000 ? 'Feed may be stale' : 'Time to next scan'}
@@ -115,7 +165,7 @@ export default function Dashboard({ snap }: { snap: Snapshot }) {
               <span className="ring" aria-hidden="true" />
               <span className="lbl">{refreshing ? 'scanning' : `next scan ${Math.floor(nextIn / 60)}:${String(nextIn % 60).padStart(2, '0')}`}</span>
             </span>
-          </nav>
+          </div>
         </div>
       </header>
 
@@ -297,6 +347,10 @@ export default function Dashboard({ snap }: { snap: Snapshot }) {
                 <li>Live board (no delay), gap alert thresholds</li>
                 <li>Gap history charts per market</li>
                 <li>API access (early)</li>
+                <li className="chrome-note">
+                  <span className="chrome-swatch" aria-hidden="true" />
+                  Chrome Ledger terminal skin (desk-key perk)
+                </li>
               </ul>
               <a
                 className="cta"

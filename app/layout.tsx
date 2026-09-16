@@ -28,9 +28,21 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Default theme before hydration: match the visitor's system preference.
+  // The client refines on mount (and honours a saved choice).
+  const initScript = `
+    try {
+      var t = localStorage.getItem('gap369-theme');
+      if (!t || t === 'chrome') t = matchMedia('(prefers-color-scheme: light)').matches ? 'daylight' : 'midnight';
+      document.documentElement.dataset.theme = t;
+    } catch (e) {
+      document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: light)').matches ? 'daylight' : 'midnight';
+    }
+  `;
   return (
-    <html lang="en">
+    <html lang="en" data-theme="midnight" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: initScript }} />
         {GA_ID && (
           <>
             <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} />
