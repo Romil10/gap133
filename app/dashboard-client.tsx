@@ -139,7 +139,7 @@ export default function Dashboard({ snap, unlocked }: { snap: Snapshot; unlocked
           </div>
           <div className="hdr-right">
             <nav className="hdr-nav">
-              <a href="#terminal">Terminal</a>
+              <a href="/guide">Guide</a>
               <a href="#pricing">Access</a>
             </nav>
             <div className="themesw" role="group" aria-label="Theme">
