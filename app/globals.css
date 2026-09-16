@@ -599,6 +599,16 @@ html[data-theme="daylight"] .guide a {
   padding: 1px 6px;
   box-shadow: 2px 2px 0 var(--text);
 }
+/* audit fix (Romil): the paynote contact link renders bold inside .paynote and
+   was missed by the accent-link rule; chip it too. */
+html[data-theme="daylight"] .paynote a {
+  color: var(--text);
+  background: var(--accent);
+  text-decoration: none;
+  padding: 1px 6px;
+  box-shadow: 2px 2px 0 var(--text);
+  font-weight: 700;
+}
 html[data-theme="daylight"] .notice.upsell a { font-weight: 700; }
 /* tier li markers and chart labels on daylight keep their colour but darken */
 html[data-theme="daylight"] .tier li::before { color: #5E6B00; }

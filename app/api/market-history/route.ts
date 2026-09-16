@@ -5,29 +5,24 @@ import { fetchHistoryWithTokens } from '../../../lib/history';
 export const dynamic = 'force-dynamic';
 
 // GET /api/market-history?kx=<ticker>&pmclob=<clobTokenIds json>
-// Free: 7-day gap series at 60-min buckets (the same data paying desks get;
-// the delay/live split lives on the board, not on history).
+// TIERED: free = 24h hourly, desk key = 90d daily. Enforced server-side.
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const kxTicker = url.searchParams.get('kx');
   const pmClob = url.searchParams.get('pmclob');
-  const pmId = url.searchParams.get('pmid');
-  const kxTitle = url.searchParams.get('kxtitle') ?? '';
-  const kxEvent = url.searchParams.get('kxevent') ?? '';
 
   if (!kxTicker || !pmClob) {
     return NextResponse.json({ error: 'kx and pmclob required' }, { status: 400 });
   }
 
-  // free tier: 10-minute served-from-cache delay is acceptable; auth-free for now
-  const unlocked = await isUnlocked();
-  void pmId; void kxTitle; void kxEvent; void unlocked;
+  const tier: 'desk' | 'free' = (await isUnlocked()) ? 'desk' : 'free';
 
   try {
     const data = await fetchHistoryWithTokens(
-      { ticker: kxTicker, eventTitle: kxEvent, title: kxTitle, yesBid: null, yesAsk: null, volume: 0 },
-      { id: pmId ?? '', question: '', outcomes: null, outcomePrices: null, clobTokenIds: pmClob, volume24hr: 0, volume: 0, liquidity: 0, endDate: null, slug: null },
-      pmClob
+      { ticker: kxTicker, eventTitle: url.searchParams.get('kxevent') ?? '', title: url.searchParams.get('kxtitle') ?? '', yesBid: null, yesAsk: null, volume: 0 },
+      { id: url.searchParams.get('pmid') ?? '', question: '', outcomes: null, outcomePrices: null, clobTokenIds: pmClob, volume24hr: 0, volume: 0, liquidity: 0, endDate: null, slug: null },
+      pmClob,
+      tier
     );
     return NextResponse.json(data);
   } catch (e: any) {

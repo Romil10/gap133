@@ -1,12 +1,12 @@
-// Per-market history for the expandable analytics drawer.
-// Kalshi: candlesticks endpoint (series_ticker/market_ticker), 60-min buckets.
-// Polymarket: CLOB prices-history by CLOB token id (from clobTokenIds[0] = YES),
-// same bucket size. We compute the GAP series = |pm - kx| per aligned bucket.
+// Per-market history for the expandable analytics drawer, TIERED:
+//   free: 24 hours, hourly buckets
+//   desk key: 90 days, daily buckets (Kalshi period_interval=1440)
+// Volume bars: Kalshi candlestick volume. Polymarket history carries no volume.
 
 import { KXMarket } from './kalshi';
 import { PMMarket } from './polymarket';
 
-const DAY = 86_400_000;
+const HOUR = 3_600_000;
 
 export interface GapPoint {
   t: number; // epoch ms
@@ -21,6 +21,13 @@ export interface VolumePoint {
   pmVol: number | null;
 }
 
+export interface HistoryData {
+  gap: GapPoint[];
+  volume: VolumePoint[];
+  windowHours: number;
+  tier: 'desk' | 'free';
+}
+
 async function jsonFetch(url: string, revalidate = 300): Promise<any> {
   const res = await fetch(url, {
     next: { revalidate },
@@ -31,104 +38,84 @@ async function jsonFetch(url: string, revalidate = 300): Promise<any> {
   return res.json();
 }
 
-export async function fetchHistory(kx: KXMarket, pm: PMMarket): Promise<{ gap: GapPoint[]; volume: VolumePoint[] }> {
-  const endTs = Math.floor(Date.now() / 1000);
-  const startTs = Math.floor((Date.now() - 7 * DAY) / 1000);
-
-  // Kalshi: series ticker = market ticker minus the last dash segment
-  // (KXPRESNOMD-28-AOC -> KXPRESNOMD); per verified API shape.
-  const series = kx.ticker.split('-')[0];
-  const [kxC, pmH] = await Promise.all([
-    jsonFetch(`https://api.elections.kalshi.com/trade-api/v2/series/${series}/markets/${kx.ticker}/candlesticks?start_ts=${startTs}&end_ts=${endTs}&period_interval=60`)
-      .catch(() => null),
-    (async () => {
-      try {
-        const tokens = pm.clobTokenIds ? JSON.parse(pm.clobTokenIds) : null;
-        if (!tokens?.[0]) return null;
-        return await jsonFetch(`https://clob.polymarket.com/prices-history?market=${tokens[0]}&startTs=${startTs}&endTs=${endTs}&fidelity=60`);
-      } catch { return null; }
-    })(),
-  ]);
-
-  // PM token ids needed for history; thread them through the market object.
-  return assemble(kxC, pmH, kx, pm);
-}
-
-// exported for caching in the market route (clobTokenIds is on the raw PM row)
 export async function fetchHistoryWithTokens(
   kx: KXMarket,
-  pm: PMMarket,
-  pmClobTokenIds: string | null
-): Promise<{ gap: GapPoint[]; volume: VolumePoint[] }> {
+  _pm: PMMarket,
+  pmClobTokenIds: string | null,
+  tier: 'desk' | 'free'
+): Promise<HistoryData> {
+  const windowMs = tier === 'desk' ? 90 * 86_400_000 : 24 * HOUR;
   const endTs = Math.floor(Date.now() / 1000);
-  const startTs = Math.floor((Date.now() - 7 * DAY) / 1000);
+  const startTs = Math.floor((Date.now() - windowMs) / 1000);
+  const interval = tier === 'desk' ? 1440 : 60; // daily : hourly
 
   const series = kx.ticker.split('-')[0];
+  let pmToken: string | null = null;
+  try {
+    const tokens = pmClobTokenIds ? JSON.parse(pmClobTokenIds) : null;
+    pmToken = tokens?.[0] ?? null;
+  } catch {}
+
+  // PM CLOB quirk (verified 2026-09-16): startTs/endTs with fidelity > 60
+  // returns empty; only fidelity=60 (hourly) respects a window, and interval=
+  // "max" returns the full available history at the data's native resolution
+  // (Polymarket only keeps ~1 month, 2026-08-16 to today at time of test).
+  // Desk tier pulls interval=max and clips to 90d locally; free pulls 24h hourly.
   const [kxC, pmH] = await Promise.all([
-    jsonFetch(`https://api.elections.kalshi.com/trade-api/v2/series/${series}/markets/${kx.ticker}/candlesticks?start_ts=${startTs}&end_ts=${endTs}&period_interval=60`)
+    jsonFetch(`https://api.elections.kalshi.com/trade-api/v2/series/${series}/markets/${kx.ticker}/candlesticks?start_ts=${startTs}&end_ts=${endTs}&period_interval=${interval}`)
       .catch(() => null),
-    (async () => {
-      try {
-        const tokens = pmClobTokenIds ? JSON.parse(pmClobTokenIds) : null;
-        if (!tokens?.[0]) return null;
-        return await jsonFetch(`https://clob.polymarket.com/prices-history?market=${tokens[0]}&startTs=${startTs}&endTs=${endTs}&fidelity=60`);
-      } catch { return null; }
-    })(),
+    pmToken
+      ? (tier === 'desk'
+          ? jsonFetch(`https://clob.polymarket.com/prices-history?market=${pmToken}&interval=max`)
+          : jsonFetch(`https://clob.polymarket.com/prices-history?market=${pmToken}&startTs=${startTs}&endTs=${endTs}&fidelity=60`)
+        ).catch(() => null)
+      : Promise.resolve(null),
   ]);
 
-  return assemble(kxC, pmH, kx, pm);
-}
-
-function assemble(
-  kxC: any,
-  pmH: any,
-  kx: KXMarket,
-  _pm: PMMarket
-): { gap: GapPoint[]; volume: VolumePoint[] } {
+  // bucket by window: daily windows bucket per day, hourly per hour.
+  // PM buckets are offset past the boundary, KX buckets are aligned: round
+  // BOTH to the bucket start, last value in a bucket wins.
+  const bucketMs = tier === 'desk' ? 86_400_000 : HOUR;
+  const clipFrom = Date.now() - windowMs;
   const kxBuckets = new Map<number, { close: number; vol: number }>();
   for (const c of kxC?.candlesticks ?? []) {
     const t = (c.end_period_ts ?? 0) * 1000;
+    if (t < clipFrom) continue;
     const close = parseFloat(c.price?.close_dollars ?? 'NaN');
     const vol = parseFloat(c.volume_fp ?? '0') || 0;
-    if (Number.isFinite(close)) kxBuckets.set(t, { close, vol });
+    if (Number.isFinite(close)) {
+      const b = Math.floor(t / bucketMs) * bucketMs;
+      kxBuckets.set(b, { close, vol });
+    }
   }
-
   const pmBuckets = new Map<number, { close: number; vol: number }>();
   for (const h of pmH?.history ?? []) {
     const t = (h.t ?? 0) * 1000;
-    pmBuckets.set(t, { close: h.p, vol: 0 });
+    if (t < clipFrom) continue;
+    if (!Number.isFinite(h.p)) continue;
+    pmBuckets.set(Math.floor(t / bucketMs) * bucketMs, { close: h.p, vol: 0 });
   }
 
-  // PM buckets are offset from the hour (e.g. :24s past), Kalshi buckets are
-  // hour-aligned. Round BOTH to the hour bucket, taking the last value in each.
-  const roundHour = (t: number) => Math.floor(t / 3_600_000) * 3_600_000;
-  const kxHours = new Map<number, { close: number; vol: number }>();
-  for (const [t, v] of kxBuckets) kxHours.set(roundHour(t), v);
-  const pmHours = new Map<number, { close: number; vol: number }>();
-  for (const [t, v] of pmBuckets) pmHours.set(roundHour(t), v);
-
-  // align on union of hour buckets
-  const times = [...new Set([...kxHours.keys(), ...pmHours.keys()])].sort((a, b) => a - b);
-  const gap: GapPoint[] = [];
-  for (const t of times) {
-    const kxV = kxHours.get(t)?.close ?? null;
-    const pmV = pmHours.get(t)?.close ?? null;
-    gap.push({
+  const times = [...new Set([...kxBuckets.keys(), ...pmBuckets.keys()])].sort((a, b) => a - b);
+  const gap: GapPoint[] = times.map((t) => {
+    const kxV = kxBuckets.get(t)?.close ?? null;
+    const pmV = pmBuckets.get(t)?.close ?? null;
+    return {
       t,
       kx: kxV,
       pm: pmV,
       gap: kxV !== null && pmV !== null ? Math.abs(kxV - pmV) * 100 : null,
-    });
-  }
-
-  // volume series from kalshi candlesticks + pm 24h fallback (pm gives none here)
+    };
+  });
   const volume: VolumePoint[] = times.map((t) => ({
     t,
-    kxVol: kxHours.get(t)?.vol ?? null,
-    pmVol: pmHours.get(t)?.vol ?? null,
+    kxVol: kxBuckets.get(t)?.vol ?? null,
+    pmVol: pmBuckets.get(t)?.vol ?? null,
   }));
 
-  return { gap, volume };
+  return { gap, volume, windowHours: windowMs / HOUR, tier };
 }
 
-export { DAY };
+export async function fetchHistory(kx: KXMarket, pm: PMMarket, tier: 'desk' | 'free' = 'free') {
+  return fetchHistoryWithTokens(kx, pm, pm.clobTokenIds, tier);
+}

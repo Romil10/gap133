@@ -430,7 +430,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
           <div className="paynote">
             <b>Payments:</b> founding-desk seats are settled in crypto (USDC / USDT / BTC / ETH).
             Checkout is currently manual while wallets are being wired: email{' '}
-            <a href="mailto:hello@gap369.xyz" style={{ color: 'var(--accent)' }}>hello@gap369.xyz</a>{' '}
+            <a href="mailto:hello@gap369.xyz">hello@gap369.xyz</a>{' '}
             and you get a payment address back, your month starts from on-chain confirmation. No
             cards, no auto-renew. <b>Not financial advice.</b> Data from the Polymarket and Kalshi
             public APIs; venues own their marks.
