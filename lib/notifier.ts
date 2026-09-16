@@ -61,7 +61,13 @@ export async function runAlerts(snap: Snapshot): Promise<number> {
       pairLine(p) +
       `\n<a href="${boardUrl(p)}">open in gap369↗</a> · <a href="${kalshiUrl(p.kx)}">kalshi↗</a> · <a href="${polymarketUrl(p.pm) ?? ''}">polymarket↗</a>\n` +
       `not financial advice · verify on-venue`;
-    if (await sendToChannel(text)) sent++;
+    const delivered = await sendToChannel(text);
+    if (delivered) sent++;
+    // durable alert history (no-op if DB unavailable)
+    try {
+      const { recordAlert } = await import('./persist');
+      await recordAlert(p.kx.ticker, p.pm.id, p.gapCents ?? 0, delivered);
+    } catch {}
   }
   return sent;
 }
@@ -93,6 +99,25 @@ export async function maybeDigest(snap: Snapshot): Promise<boolean> {
 export async function runCycle(): Promise<{ alerts: number; digest: boolean; telegram: boolean }> {
   if (!telegramConfigured()) return { alerts: 0, digest: false, telegram: false };
   const snap = await getSnapshot();
+  // persistence: record every scan's pair set (no-op if DB unavailable);
+  // this is how history grows beyond Polymarket's native 1-month limit.
+  try {
+    const { recordSnapshot } = await import('./persist');
+    await recordSnapshot(
+      snap.pairs.map((p) => ({
+        kxTicker: p.kx.ticker,
+        pmId: p.pm.id,
+        question: p.pm.question,
+        eventTitle: p.kx.eventTitle,
+        kxYes: p.kxYes,
+        pmYes: p.pmYes,
+        gapCents: p.gapCents,
+        pmVol24h: p.pm.volume24hr,
+        score: p.score,
+        needsReview: p.needsReview,
+      }))
+    );
+  } catch {}
   const alerts = await runAlerts(snap);
   const digest = await maybeDigest(snap);
   return { alerts, digest, telegram: true };

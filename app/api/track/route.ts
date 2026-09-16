@@ -14,6 +14,10 @@ function bump(e: string, d?: string) {
   counts.set(e, (counts.get(e) ?? 0) + 1);
   recent.push({ e, d, t: Date.now() });
   if (recent.length > MAX_RECENT) recent.shift();
+  // durable record (no-op if DB unavailable)
+  import('../../../lib/persist')
+    .then(({ recordEvent }) => recordEvent(e, d))
+    .catch(() => {});
 }
 
 export async function POST(req: Request) {

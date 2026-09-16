@@ -521,7 +521,7 @@ function Drawer({ p, rowKey }: { p: MatchedPair; rowKey: string }) {
     });
     fetch(`/api/market-history?${params}`, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('fetch failed'))))
-      .then((d) => { if (!dead) setData(d); })
+      .then((d) => { if (!dead) setData({ gap: d.gap, volume: d.volume }); })
       .catch(() => { if (!dead) setErr(true); });
     return () => { dead = true; };
   }, [p.kx.ticker, p.pm.clobTokenIds, p.pm.id, p.kx.title, p.kx.eventTitle]);
