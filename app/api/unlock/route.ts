@@ -6,13 +6,14 @@ export const dynamic = 'force-dynamic';
 // GET /api/unlock?key=XXXX
 // Valid key -> set the desk-key cookie for 30 days and bounce to the board.
 // Invalid -> bounce back to pricing with a #locked marker the UI can flag.
+// Redirects are RELATIVE: behind Railway's proxy, an absolute URL built from
+// request internals pointed users at https://localhost:8080/ (reproduced).
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const key = url.searchParams.get('key');
-  const base = `${url.protocol}//${url.host}`;
 
   if (key && deskKeyValid(key)) {
-    const res = NextResponse.redirect(`${base}/`, 302);
+    const res = NextResponse.redirect('/?unlocked=1', 302);
     res.cookies.set(KEY_COOKIE, key, {
       httpOnly: true,
       secure: true,
@@ -22,5 +23,5 @@ export async function GET(req: Request) {
     });
     return res;
   }
-  return NextResponse.redirect(`${base}/#locked`, 302);
+  return NextResponse.redirect('/#locked', 302);
 }
