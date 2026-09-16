@@ -41,6 +41,7 @@ export default function Dashboard({ snap, unlocked }: { snap: Snapshot; unlocked
   const [theme, setTheme] = useState<Theme>('midnight');
   const chromeUnlocked = useRef(unlocked);
   const prevRef = useRef<Map<string, number>>(new Map());
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -274,10 +275,18 @@ export default function Dashboard({ snap, unlocked }: { snap: Snapshot; unlocked
                   const reviewNote = p.reviewReason;
                   const rowKey = p.kx.ticker + p.pm.id;
                   return (
-                    <tr
+                    <RowWithDrawer
                       key={rowKey}
-                      id={'row-' + rowKey}
+                      rowKey={rowKey}
+                      p={p}
+                      rowId={'row-' + rowKey}
                       className={`${flashClass(p)} ${hlKey === rowKey ? 'hl' : ''}`}
+                      expanded={expanded === rowKey}
+                      onToggle={() => {
+                        const next = expanded === rowKey ? null : rowKey;
+                        setExpanded(next);
+                        if (next) track('chart_open', p.kx.ticker);
+                      }}
                     >
                       <td className="q">
                         <div className="main">{p.pm.question}</div>
@@ -306,7 +315,7 @@ export default function Dashboard({ snap, unlocked }: { snap: Snapshot; unlocked
                             rel="noopener noreferrer nofollow"
                             className="vlink"
                             title="Open on Polymarket"
-                            onClick={() => track('venue_click', 'pm')}
+                            onClick={(e) => { e.stopPropagation(); track('venue_click', 'pm'); }}
                           >
                             PM↗
                           </a>
@@ -317,12 +326,12 @@ export default function Dashboard({ snap, unlocked }: { snap: Snapshot; unlocked
                           rel="noopener noreferrer nofollow"
                           className="vlink"
                           title="Open on Kalshi"
-                          onClick={() => track('venue_click', 'kx')}
+                          onClick={(e) => { e.stopPropagation(); track('venue_click', 'kx'); }}
                         >
                           KX↗
                         </a>
                       </td>
-                    </tr>
+                    </RowWithDrawer>
                   );
                 })}
                 {sorted.length === 0 && (
@@ -395,5 +404,146 @@ export default function Dashboard({ snap, unlocked }: { snap: Snapshot; unlocked
         </div>
       </footer>
     </>
+  );
+}
+
+/* ---------------- expandable row with analytics drawer ---------------- */
+
+interface GapPoint { t: number; kx: number | null; pm: number | null; gap: number | null; }
+interface VolumePoint { t: number; kxVol: number | null; pmVol: number | null; }
+
+function RowWithDrawer({
+  rowKey, p, rowId, className, expanded, onToggle, children,
+}: {
+  rowKey: string;
+  p: MatchedPair;
+  rowId: string;
+  className: string;
+  expanded: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <tr id={rowId} className={`${className} ${expanded ? 'exp' : ''}`} onClick={onToggle} style={{ cursor: 'pointer' }} title="Click for market analytics">
+        {children}
+      </tr>
+      {expanded && (
+        <tr className="drawer-tr">
+          <td colSpan={7} style={{ padding: 0 }}>
+            <Drawer p={p} rowKey={rowKey} />
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+function Drawer({ p, rowKey }: { p: MatchedPair; rowKey: string }) {
+  const [data, setData] = useState<{ gap: GapPoint[]; volume: VolumePoint[] } | null>(null);
+  const [err, setErr] = useState(false);
+
+  useEffect(() => {
+    let dead = false;
+    const params = new URLSearchParams({
+      kx: p.kx.ticker,
+      pmclob: p.pm.clobTokenIds ?? '',
+      pmid: p.pm.id,
+      kxtitle: p.kx.title ?? '',
+      kxevent: p.kx.eventTitle ?? '',
+    });
+    fetch(`/api/market-history?${params}`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('fetch failed'))))
+      .then((d) => { if (!dead) setData(d); })
+      .catch(() => { if (!dead) setErr(true); });
+    return () => { dead = true; };
+  }, [p.kx.ticker, p.pm.clobTokenIds, p.pm.id, p.kx.title, p.kx.eventTitle]);
+
+  return (
+    <div className="drawer" onClick={(e) => e.stopPropagation()}>
+      <div className="dcharts">
+        <div className="dchart">
+          <div className="dlabel">gap · last 7 days (cents)</div>
+          {err && <div className="dempty">history unavailable for this pair right now</div>}
+          {!err && !data && <div className="dempty">loading history…</div>}
+          {data && <GapChart points={data.gap} />}
+        </div>
+        <div className="dchart">
+          <div className="dlabel">each venue · last 7 days (¢)</div>
+          {data && <VenueChart points={data.gap} />}
+        </div>
+        <div className="dchart">
+          <div className="dlabel">kalshi volume · hourly</div>
+          {data && <VolumeChart points={data.volume} />}
+        </div>
+      </div>
+      <div className="dmeta">
+        <span>match confidence {(p.score * 100).toFixed(0)}%</span>
+        <span>{p.kx.ticker}</span>
+        <span>kalshi {fmtPct(p.kxYes)} · polymarket {fmtPct(p.pmYes)}</span>
+      </div>
+    </div>
+  );
+}
+
+function path(points: { x: number; y: number }[]): string {
+  if (!points.length) return '';
+  return points.map((pt, i) => `${i === 0 ? 'M' : 'L'}${pt.x.toFixed(1)},${pt.y.toFixed(1)}`).join(' ');
+}
+
+function GapChart({ points }: { points: GapPoint[] }) {
+  const W = 420, H = 110, PAD = 6;
+  const valid = points.filter((pt) => pt.gap !== null);
+  if (valid.length < 2) return <div className="dempty">not enough history yet</div>;
+  const t0 = valid[0].t, t1 = valid[valid.length - 1].t;
+  const maxGap = Math.max(1, ...valid.map((v) => v.gap ?? 0));
+  const X = (t: number) => PAD + ((t - t0) / Math.max(1, t1 - t0)) * (W - 2 * PAD);
+  const Y = (g: number) => H - PAD - (g / maxGap) * (H - 2 * PAD);
+  const line = path(valid.map((v) => ({ x: X(v.t), y: Y(v.gap ?? 0) })));
+  const area = `${line} L${X(valid[valid.length - 1].t)},${H - PAD} L${X(valid[0].t)},${H - PAD} Z`;
+  const last = valid[valid.length - 1];
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="chart" preserveAspectRatio="none">
+      <path d={area} fill="var(--accent)" opacity="0.12" />
+      <path d={line} fill="none" stroke="var(--accent)" strokeWidth="2" />
+      <circle cx={X(last.t)} cy={Y(last.gap ?? 0)} r="3.5" fill="var(--accent)" />
+      <text x={PAD} y={12} className="chart-y">{maxGap.toFixed(1)}¢</text>
+      <text x={PAD} y={H - PAD - 4} className="chart-y">0¢</text>
+    </svg>
+  );
+}
+
+function VenueChart({ points }: { points: GapPoint[] }) {
+  const W = 420, H = 110, PAD = 6;
+  const valid = points.filter((pt) => pt.kx !== null || pt.pm !== null);
+  if (valid.length < 2) return <div className="dempty">not enough history yet</div>;
+  const t0 = valid[0].t, t1 = valid[valid.length - 1].t;
+  const X = (t: number) => PAD + ((t - t0) / Math.max(1, t1 - t0)) * (W - 2 * PAD);
+  const Y = (p: number) => H - PAD - p * (H - 2 * PAD);
+  const kxLine = path(valid.filter((v) => v.kx !== null).map((v) => ({ x: X(v.t), y: Y(v.kx ?? 0) })));
+  const pmLine = path(valid.filter((v) => v.pm !== null).map((v) => ({ x: X(v.t), y: Y(v.pm ?? 0) })));
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="chart" preserveAspectRatio="none">
+      <path d={kxLine} fill="none" stroke="var(--amber)" strokeWidth="2" />
+      <path d={pmLine} fill="none" stroke="var(--green)" strokeWidth="2" strokeDasharray="4 3" />
+      <text x={PAD} y={12} className="chart-y"><tspan fill="var(--amber)">kx</tspan> <tspan fill="var(--green)">pm</tspan></text>
+    </svg>
+  );
+}
+
+function VolumeChart({ points }: { points: VolumePoint[] }) {
+  const W = 420, H = 110, PAD = 6;
+  const valid = points.filter((pt) => (pt.kxVol ?? 0) > 0);
+  if (valid.length < 2) return <div className="dempty">no volume data yet</div>;
+  const maxV = Math.max(...valid.map((v) => v.kxVol ?? 0));
+  const bw = (W - 2 * PAD) / valid.length;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="chart" preserveAspectRatio="none">
+      {valid.map((v, i) => {
+        const h = ((v.kxVol ?? 0) / maxV) * (H - 2 * PAD);
+        return <rect key={i} x={PAD + i * bw} y={H - PAD - h} width={Math.max(1, bw - 1)} height={h} fill="var(--amber)" opacity="0.7" />;
+      })}
+      <text x={PAD} y={12} className="chart-y">{Math.round(maxV).toLocaleString()}</text>
+    </svg>
   );
 }

@@ -440,6 +440,30 @@ html[data-theme="daylight"] .cta.ghost:hover { transform: none; box-shadow: var(
 }
 .paynote b { color: var(--text); }
 
+/* ---------- expandable analytics drawer ---------- */
+tbody tr.exp td { background: color-mix(in srgb, var(--accent) 7%, transparent); border-bottom-color: var(--line-bright); }
+.drawer-tr td { background: var(--panel-2); padding: 0 !important; }
+.drawer { padding: 16px 18px; }
+.dcharts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 900px) { .dcharts { grid-template-columns: 1fr; } }
+.dchart { min-width: 0; }
+.dlabel {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.chart { width: 100%; height: 110px; display: block; }
+.chart-y { font-family: var(--font-mono); font-size: 9px; fill: var(--muted); }
+.dempty {
+  font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+  padding: 24px 0; text-align: center;
+}
+.dmeta {
+  display: flex; gap: 18px; flex-wrap: wrap;
+  margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--muted);
+}
+
 /* ---------- footer ---------- */
 .ftr { border-top: var(--border-w) solid var(--line); padding: 22px 0 40px; color: var(--faint); font-size: 11px; line-height: 1.8; }
 .ftr a { color: var(--accent); }

@@ -6,6 +6,7 @@ export interface PMMarket {
   question: string;
   outcomes: string | null;
   outcomePrices: string | null;
+  clobTokenIds: string | null;
   volume24hr: number | null;
   volume: number | null;
   liquidity: number | null;
@@ -34,6 +35,7 @@ export async function fetchPolymarketTop(limit = 150): Promise<PMMarket[]> {
       question: m.question,
       outcomes: m.outcomes ?? null,
       outcomePrices: m.outcomePrices ?? null,
+      clobTokenIds: m.clobTokenIds ?? null,
       volume24hr: m.volume24hr ?? 0,
       volume: m.volume ?? 0,
       liquidity: m.liquidity ?? 0,
