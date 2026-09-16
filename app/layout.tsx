@@ -1,5 +1,12 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { startScheduler } from './scheduler';
+
+// In-process Telegram scheduler (alerts + daily digest). No-ops until
+// TELEGRAM_BOT_TOKEN + TELEGRAM_CHANNEL_ID are set.
+if (process.env.NEXT_RUNTIME === 'nodejs') {
+  startScheduler();
+}
 
 // Optional GA4: activates only when NEXT_PUBLIC_GA_ID is set at build time.
 // Loads with Consent Mode v2 defaults (denied until the user consents) per the
