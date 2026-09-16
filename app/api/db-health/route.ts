@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { analyticsSummary } from '../../../lib/persist';
+import { analyticsSummary, ensureSchema } from '../../../lib/persist';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 // returned); useful for Romil to confirm the DB round-trip works in prod.
 export async function GET() {
   try {
+    await ensureSchema();
     const { poolInstance } = await import('../../../lib/persist');
     const pool = poolInstance();
     const snap = await pool.query(
