@@ -27,6 +27,19 @@ export const metadata: Metadata = {
   },
 };
 
+// All three theme type systems load up front: Space Mono (Daylight),
+// JetBrains Mono (Midnight Tape), Syne + Space Grotesk (Chrome Ledger).
+// Each theme declares its own pairing via --font-* tokens.
+const FONTS_HREF =
+  'https://fonts.googleapis.com/css2?' +
+  [
+    'family=Space+Mono:ital,wght@0,400;0,700;1,400',
+    'family=JetBrains+Mono:wght@400;500;700;800',
+    'family=Syne:wght@600;700;800',
+    'family=Space+Grotesk:wght@400;500;600;700',
+  ].join('&') +
+  '&display=swap';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   // Default theme before hydration: match the visitor's system preference.
   // The client refines on mount (and honours a saved choice).
@@ -42,6 +55,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" data-theme="midnight" suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="stylesheet" href={FONTS_HREF} />
         <script dangerouslySetInnerHTML={{ __html: initScript }} />
         {GA_ID && (
           <>
