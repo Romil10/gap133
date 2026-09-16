@@ -1,6 +1,21 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
+// Optional GA4: activates only when NEXT_PUBLIC_GA_ID is set at build time.
+// Loads with Consent Mode v2 defaults (denied until the user consents) per the
+// standing site standard; the first-party tracker works without any of this.
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+
+const gaScript = GA_ID
+  ? `
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', { ad_storage: 'denied', analytics_storage: 'denied' });
+    gtag('js', new Date());
+    gtag('config', '${GA_ID}', { anonymize_ip: true });
+  `
+  : '';
+
 export const metadata: Metadata = {
   title: 'gap369 - Cross-Venue Prediction Market Terminal',
   description:
@@ -15,6 +30,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        {GA_ID && (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} />
+            <script dangerouslySetInnerHTML={{ __html: gaScript }} />
+          </>
+        )}
+      </head>
       <body>{children}</body>
     </html>
   );

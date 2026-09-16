@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Snapshot } from '../lib/snapshot';
 import type { MatchedPair } from '../lib/matcher';
+import { polymarketUrl, kalshiUrl } from '../lib/links';
 
 type SortKey = 'gap' | 'volume' | 'confidence';
 
@@ -10,6 +11,18 @@ const POLL_MS = 120_000;
 
 function fmtPct(v: number | null): string {
   return v !== null ? `${(v * 100).toFixed(1)}¢` : '—';
+}
+
+// first-party event tracking: fire-and-forget, no PII, no third party
+function track(e: string, d?: string) {
+  try {
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ e, d }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {}
 }
 
 export default function Dashboard({ snap }: { snap: Snapshot }) {
@@ -220,12 +233,36 @@ export default function Dashboard({ snap }: { snap: Snapshot }) {
                       </td>
                       <td className="price">${Math.round(p.pm.volume24hr ?? 0).toLocaleString()}</td>
                       <td className="conf">{(p.score * 100).toFixed(0)}%</td>
+                      <td className="venue-links">
+                        {p.pm.slug && (
+                          <a
+                            href={polymarketUrl(p.pm) ?? '#'}
+                            target="_blank"
+                            rel="noopener noreferrer nofollow"
+                            className="vlink"
+                            title="Open on Polymarket"
+                            onClick={() => track('venue_click', 'pm')}
+                          >
+                            PM↗
+                          </a>
+                        )}
+                        <a
+                          href={kalshiUrl(p.kx)}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow"
+                          className="vlink"
+                          title="Open on Kalshi"
+                          onClick={() => track('venue_click', 'kx')}
+                        >
+                          KX↗
+                        </a>
+                      </td>
                     </tr>
                   );
                 })}
                 {sorted.length === 0 && (
                   <tr>
-                    <td colSpan={6} style={{ color: 'var(--muted)', padding: 24 }}>
+                    <td colSpan={7} style={{ color: 'var(--muted)', padding: 24 }}>
                       No pairs in this view right now. The scanner refreshes every 2 minutes.
                     </td>
                   </tr>
@@ -261,7 +298,11 @@ export default function Dashboard({ snap }: { snap: Snapshot }) {
                 <li>Gap history charts per market</li>
                 <li>API access (early)</li>
               </ul>
-              <a className="cta" href="mailto:hello@gap369.xyz?subject=Founding desk access">
+              <a
+                className="cta"
+                href="mailto:hello@gap369.xyz?subject=Founding desk access"
+                onClick={() => track('cta_click', 'founding_desk')}
+              >
                 Pay with crypto →
               </a>
             </div>
