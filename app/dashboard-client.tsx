@@ -43,7 +43,7 @@ export default function Dashboard({ snap }: { snap: Snapshot }) {
       <header className="hdr">
         <div className="wrap hdr-in">
           <div className="logo">
-            GRANITE<span>/</span>CAPITAL
+            GAP<span>/</span>369
           </div>
           <nav className="hdr-nav">
             <a href="#terminal">Terminal</a>
@@ -64,7 +64,7 @@ export default function Dashboard({ snap }: { snap: Snapshot }) {
         <section className="hero" id="terminal">
           <h1>One event. Two venues. Two prices.</h1>
           <p>
-            Granite Capital surfaces the price difference between Polymarket and Kalshi on the same
+            gap369 surfaces the price difference between Polymarket and Kalshi on the same
             prediction markets, ranked in cents. Updated continuously from both venues' public
             order books. Data only, no trading, not financial advice.
           </p>
