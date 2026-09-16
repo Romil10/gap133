@@ -27,13 +27,9 @@ function track(e: string, d?: string) {
   } catch {}
 }
 
-// Desk keys (crypto-paid seats) unlock the chrome theme; v0 keeps them in
-// localStorage until the access-key gate replaces this.
-function deskKeyUnlocked(): boolean {
-  try { return !!localStorage.getItem('gap369-desk-key'); } catch { return false; }
-}
-
-export default function Dashboard({ snap }: { snap: Snapshot }) {
+// Desk-key access is server-checked via the httpOnly cookie set by /api/unlock;
+// the page passes `unlocked` down so the theme switch reflects real access.
+export default function Dashboard({ snap, unlocked }: { snap: Snapshot; unlocked: boolean }) {
   const [sort, setSort] = useState<SortKey>('gap');
   const [pairs, setPairs] = useState<MatchedPair[]>(snap.pairs);
   const [meta, setMeta] = useState<Snapshot>(snap);
@@ -43,11 +39,10 @@ export default function Dashboard({ snap }: { snap: Snapshot }) {
   const [showReview, setShowReview] = useState(false);
   // theme: daylight | midnight | chrome (chrome needs a desk key)
   const [theme, setTheme] = useState<Theme>('midnight');
-  const chromeUnlocked = useRef(false);
+  const chromeUnlocked = useRef(unlocked);
   const prevRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
-    chromeUnlocked.current = deskKeyUnlocked();
     try {
       const saved = localStorage.getItem(THEME_KEY) as Theme | null;
       if (saved) {
