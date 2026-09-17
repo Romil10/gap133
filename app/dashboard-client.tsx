@@ -436,7 +436,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
             <div className="tier hot">
               <h3>Founding desk</h3>
               <div className="amt">
-                $15<small> / month · crypto only</small>
+                $17<small> / month · crypto only</small>
               </div>
               <ul>
                 <li>Live board (no delay), gap alert thresholds</li>

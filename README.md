@@ -38,7 +38,7 @@ npm start            # http://localhost:3000
 
 ## Payments (v0)
 
-Founding desk tier is $15/month, crypto only. v0 flow is manual: publish the
+Founding desk tier is $17/month, crypto only. v0 flow is manual: publish the
 receiving addresses (USDC/USDT on a cheap chain, BTC, ETH) on the pricing
 section once wallet addresses exist, collect email + tx hash, and track
 subscriptions in a ledger (email, tx hash, amount, asset, INR FMV at receipt

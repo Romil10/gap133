@@ -149,7 +149,7 @@ export default function Guide() {
             </ul>
           </div>
           <div className="gtier">
-            <h3>Founding desk ($15/month, crypto only)</h3>
+            <h3>Founding desk ($17/month, crypto only)</h3>
             <ul>
               <li>Live board, no delay</li>
               <li>Gap alert thresholds you set</li>
