@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0A0E14"/>
+  <!-- phi partition hairlines -->
+  <g stroke="#FFB000" stroke-width="2" opacity="0.18" fill="none">
+    <line x1="742" y1="0" x2="742" y2="630"/>
+    <line x1="742" y1="389" x2="1200" y2="389"/>
+    <line x1="1020" y1="389" x2="1020" y2="630"/>
+  </g>
+  <!-- big spiral arcs, amber -->
+  <g fill="none" stroke="#FFB000" stroke-width="18" stroke-linecap="square">
+    <path d="M 60 60 A 435 435 0 0 0 495 495" transform="scale(0.72) translate(30,40)"/>
+    <path d="M 940 320 A 268 268 0 0 1 672 52" transform="translate(0,40)"/>
+  </g>
+  <!-- acid diamond -->
+  <rect x="700" y="415" width="52" height="52" fill="#C6F211" transform="rotate(45 726 441)"/>
+  <!-- wordmark -->
+  <text x="90" y="560" font-family="JetBrains Mono, monospace" font-size="76" font-weight="700" fill="#E8E4D8" letter-spacing="2">gap<tspan fill="#FFB000">133</tspan></text>
+  <!-- tagline -->
+  <text x="92" y="600" font-family="JetBrains Mono, monospace" font-size="24" fill="#A3927A">one event · two venues · one number matters</text>
+</svg>

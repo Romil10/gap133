@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { startScheduler } from './scheduler';
+import ConsentBanner from './consent-banner';
 
 // In-process Telegram scheduler (alerts + daily digest). No-ops until
 // TELEGRAM_BOT_TOKEN + TELEGRAM_CHANNEL_ID are set.
@@ -23,18 +24,36 @@ const gaScript = GA_ID
   `
   : '';
 
+const SITE = 'https://gap133-production.up.railway.app';
+
 export const metadata: Metadata = {
-  title: 'gap133 - Cross-Venue Prediction Market Terminal',
+  metadataBase: new URL(SITE),
+  title: {
+    default: 'gap133 - Cross-Venue Prediction Market Terminal',
+    template: '%s - gap133',
+  },
   description:
     'Live odds and price gaps between Polymarket and Kalshi on the same events. Divergence ranking, unified order view, updated continuously.',
-  icons: {
-    icon: [
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: 'gap133 - Cross-Venue Prediction Market Terminal',
+    description:
+      'The price difference between Polymarket and Kalshi on the same events, ranked in cents. Updated continuously.',
+    url: SITE,
+    siteName: 'gap133',
+    type: 'website',
+    images: [{ url: '/og.svg', width: 1200, height: 630, alt: 'gap133 terminal' }],
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'gap133',
+    description: 'Cross-venue prediction market terminal: Polymarket vs Kalshi gaps in cents.',
+  },
+  icons: {
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+  },
+  manifest: '/manifest.json',
 };
 
 // All three theme type systems load up front: Space Mono (Daylight),
@@ -76,7 +95,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <ConsentBanner />
+      </body>
     </html>
   );
 }
+

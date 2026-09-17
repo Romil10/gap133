@@ -503,6 +503,42 @@ tbody tr.exp td { background: color-mix(in srgb, var(--accent) 7%, transparent);
   font-family: var(--font-mono); font-size: 10.5px; color: var(--muted);
 }
 
+/* ---------- consent banner ---------- */
+.consent {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: var(--panel); border-top: var(--border-w) solid var(--line-bright);
+  padding: 14px 20px;
+  display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap;
+}
+.consent p { color: var(--muted); font-size: 12px; max-width: 560px; margin: 0; }
+.consent button {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  background: var(--accent); color: var(--accent-ink);
+  border: var(--border-w) solid transparent; border-radius: var(--radius);
+  padding: 7px 14px; cursor: pointer;
+}
+.consent button.ghost { background: transparent; border-color: var(--line-bright); color: var(--muted); }
+.consent a { color: var(--accent); font-size: 12px; text-decoration: underline; }
+
+/* ---------- legal pages ---------- */
+.legal { padding-top: 40px; padding-bottom: 60px; max-width: 820px; }
+.legal section { margin-bottom: 34px; }
+.legal h2 {
+  font-family: var(--font-display); font-size: 17px;
+  font-weight: var(--display-weight);
+  text-transform: var(--display-transform);
+  letter-spacing: var(--display-tracking);
+  margin-bottom: 12px;
+}
+html[data-theme="chrome"] .legal h2 { background: var(--chrome-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.legal p, .legal li { font-size: 14px; line-height: 1.7; color: var(--text); margin-bottom: 10px; }
+.legal b { color: var(--accent); }
+html[data-theme="daylight"] .legal b { color: var(--text); background: linear-gradient(transparent 60%, var(--accent) 0 92%, transparent 0); }
+.legal ul { margin: 8px 0 14px 20px; }
+.legal li { list-style: none; position: relative; padding-left: 4px; margin-bottom: 8px; }
+.legal li::before { content: '>'; color: var(--accent); font-family: var(--font-mono); position: absolute; left: -16px; }
+.legal a { color: var(--accent); text-decoration: underline; }
+
 /* ---------- footer ---------- */
 .ftr { border-top: var(--border-w) solid var(--line); padding: 22px 0 40px; color: var(--faint); font-size: 11px; line-height: 1.8; }
 .ftr a { color: var(--accent); }
@@ -637,7 +673,73 @@ html[data-theme="daylight"] .notice.upsell a { font-weight: 700; }
 /* tier li markers and chart labels on daylight keep their colour but darken */
 html[data-theme="daylight"] .tier li::before { color: #5E6B00; }
 
-/* ---------- mobile ---------- */
+/* ---------- mobile compatibility (audit: 2026-09-17) ---------- */
+@media (max-width: 768px) {
+  /* stack the desk chair: stats 2x2, board full-width, drawer single-col */
+  .wrap { padding: 0 14px; }
+  .hdr-in { height: 50px; }
+  .logo { font-size: 13px; gap: 8px; }
+  .hdr-right { gap: 8px; }
+  .scanchip { padding: 3px 8px; font-size: 10px; }
+
+  /* board: keep 6 columns but shrink type + padding so 390px fits without
+     horizontal scroll; min-width on table keeps table-like alignment */
+  .tblwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { font-size: 11px; min-width: 640px; }
+  th { padding: 7px 8px; font-size: 9px; letter-spacing: 0.06em; }
+  td { padding: 8px; }
+  .q { max-width: 200px; }
+  .q .main { font-size: 11px; line-height: 1.35; }
+  .gapmain { font-size: 13px; }
+  .gapbar { width: 70px; }
+  .venue-links .vlink { display: block; margin: 2px 0; font-size: 9.5px; padding: 1px 4px; }
+
+  /* hint that the board scrolls horizontally */
+  .tblwrap::after {
+    content: 'swipe →';
+    display: block; text-align: center;
+    font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.1em;
+    color: var(--faint); padding: 6px 0;
+  }
+
+  .hero { padding: 26px 0 16px; }
+  .hero h1 { font-size: 19px; line-height: 1.3; }
+  .hero p { font-size: 12px; }
+  .statrow { margin: 16px 0; }
+  .stat { padding: 11px 12px; }
+  .stat .v { font-size: 17px; }
+  .stat .k { font-size: 9px; }
+  .panel-h { padding: 9px 12px; font-size: 10px; }
+  .board-ctl { flex-direction: column; align-items: flex-start; gap: 6px; width: 100%; }
+  .searchbox { width: 100%; }
+  .pricing { gap: 12px; margin: 18px 0; }
+  .tier { padding: 18px; }
+  .tier .amt { font-size: 23px; }
+  .paynote { padding: 12px 14px; font-size: 11.5px; }
+  .drawer { padding: 12px 10px; }
+  .dcharts { grid-template-columns: 1fr; gap: 14px; }
+  .chart { height: 90px; }
+  .dmeta { gap: 8px; flex-direction: column; }
+  .consent { flex-direction: column; text-align: center; gap: 8px; }
+  .legal, .guide { padding-top: 28px; }
+  .legal p, .legal li, .guide p, .guide li { font-size: 13px; }
+  .guide h2, .legal h2 { font-size: 15px; }
+  .watchgrid { grid-template-columns: 1fr; }
+  .ftr { padding: 18px 0 28px; font-size: 10px; }
+}
+
+/* touch target sizing on mobile: sort buttons, theme buttons, vlinks */
+@media (pointer: coarse) {
+  .sortbtns button { padding: 6px 12px; font-size: 11px; }
+  .themesw button { padding: 7px 10px; font-size: 10px; }
+  .vlink { padding: 5px 9px; font-size: 10px; margin-bottom: 4px; }
+  .cta { padding: 12px 24px; }
+  .faq summary { padding: 14px 16px; }
+}
+
+/* ---------- mobile compatibility end ---------- */
+
+/* ---------- mobile compat legacy (720px breakpoint kept for narrow phablets) ---------- */
 @media (max-width: 720px) {
   .pricing { grid-template-columns: 1fr; }
   .statrow { grid-template-columns: repeat(2, 1fr); }

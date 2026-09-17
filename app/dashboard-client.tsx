@@ -470,8 +470,11 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
       <footer className="ftr">
         <div className="wrap">
           gap133 · a data terminal for cross-venue prediction markets. Nothing here is trading
-          advice or a solicitation. Markets move: verify on-venue before acting. ·{' '}
-          <a href="mailto:hello@gap133.xyz">contact</a>
+          advice or a solicitation. Markets move: verify on-venue before acting.
+          <span className="ftr-links">
+            <a href="/guide">guide</a> · <a href="/privacy">privacy</a> ·{' '}
+            <a href="/terms">terms</a> · <a href="mailto:hello@gap133.xyz">contact</a>
+          </span>
         </div>
       </footer>
     </>
