@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Snapshot, TieredSnapshot } from '../lib/snapshot';
 import type { MatchedPair } from '../lib/matcher';
 import { polymarketUrl, kalshiUrl } from '../lib/links';
+import { SpiralMark } from './spiral-mark';
 
 type SortKey = 'gap' | 'volume' | 'confidence';
 type Theme = 'daylight' | 'midnight' | 'chrome';
@@ -168,7 +169,10 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
         <div className="wrap hdr-in">
           <div className="logo">
             <span className="live-dot" aria-hidden="true" />
-            GAP<span>/</span>133
+            <SpiralMark size={44} />
+            <span className="logo-txt">
+              GAP<span>/</span><b>133</b>
+            </span>
           </div>
           <div className="hdr-right">
             <nav className="hdr-nav">

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { SpiralMark } from '../spiral-mark';
 
 export const metadata: Metadata = {
   title: 'Field Guide - gap133',
@@ -67,7 +68,10 @@ export default function Guide() {
     <main className="wrap guide">
       <header className="guide-head">
         <Link href="/" className="backlink">&larr; back to the terminal</Link>
-        <h1>Field Guide</h1>
+        <div className="guide-brand">
+          <SpiralMark size={52} />
+          <h1>Field Guide</h1>
+        </div>
         <p className="sub">What this is, what it shows, and how to use it. Five minutes, no jargon.</p>
       </header>
 
@@ -176,9 +180,12 @@ export default function Guide() {
       </section>
 
       <footer className="ftr">
-        <p>
-          Nothing on this page is trading advice or a solicitation. Data from the Polymarket and
-          Kalshi public APIs; venues own their marks. · <Link href="/">back to the terminal</Link>
+        <p style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <SpiralMark size={26} />
+          <span>
+            gap133 field guide · nothing here is trading advice or a solicitation. Data from the
+            Polymarket and Kalshi public APIs; venues own their marks. · <Link href="/">terminal</Link>
+          </span>
         </p>
       </footer>
     </main>

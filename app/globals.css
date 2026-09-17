@@ -145,8 +145,10 @@ button { font-family: var(--font-text); }
   font-weight: var(--display-weight, 700);
   letter-spacing: 0.1em;
   text-transform: var(--display-transform, none);
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 12px;
 }
+.logo .logo-txt { display: flex; align-items: baseline; gap: 0; }
+.logo .logo-txt b { color: var(--accent); font-weight: 800; }
 .logo .live-dot {
   width: 7px; height: 7px; border-radius: 50%; background: var(--green);
   animation: pulse 2.4s ease-in-out infinite;
@@ -508,6 +510,8 @@ tbody tr.exp td { background: color-mix(in srgb, var(--accent) 7%, transparent);
 /* ---------- field guide page ---------- */
 .guide { padding-top: 40px; padding-bottom: 60px; max-width: 880px; }
 .guide-head { margin-bottom: 34px; }
+.guide-brand { display: flex; align-items: center; gap: 18px; margin-top: 14px; }
+.guide-brand h1 { margin-top: 0; }
 .backlink {
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--muted);
