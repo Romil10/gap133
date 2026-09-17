@@ -177,6 +177,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
             <nav className="hdr-nav">
               <a href="/guide">Guide</a>
               <a href="#pricing">Access</a>
+              <a href="https://t.me/gap133_alert" target="_blank" rel="noopener noreferrer" onClick={() => track('tg_click', 'header')}>Telegram↗</a>
             </nav>
             <div className="themesw" role="group" aria-label="Theme">
               <button className={theme === 'daylight' ? 'on' : ''} onClick={() => applyTheme('daylight')} title="Daylight">Day</button>
@@ -453,6 +454,15 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
               >
                 Pay with crypto →
               </a>
+              <p className="tier-sub">
+                Free alerts land in the Telegram channel first:{' '}
+                <a
+                  href="https://t.me/gap133_alert"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => track('tg_click', 'pricing')}
+                >t.me/gap133_alert↗</a>
+              </p>
             </div>
           </div>
           <div className="paynote">
@@ -474,7 +484,9 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
           </p>
           <p className="ftr-line2">
             <a href="/guide">guide</a> · <a href="/privacy">privacy</a> ·{' '}
-            <a href="/terms">terms</a> · <a href="mailto:hello@gap133.xyz">contact</a>
+            <a href="/terms">terms</a> ·{' '}
+            <a href="https://t.me/gap133_alert" target="_blank" rel="noopener noreferrer" onClick={() => track('tg_click', 'footer')}>telegram</a> ·{' '}
+            <a href="mailto:hello@gap133.xyz">contact</a>
           </p>
         </div>
       </footer>
