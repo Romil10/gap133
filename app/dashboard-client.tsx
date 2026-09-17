@@ -168,7 +168,6 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
       <header className="hdr">
         <div className="wrap hdr-in">
           <div className="logo">
-            <span className="live-dot" aria-hidden="true" />
             <SpiralMark size={44} />
             <span className="logo-txt">
               GAP<span>/</span><b>133</b>
@@ -469,12 +468,14 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
 
       <footer className="ftr">
         <div className="wrap">
-          gap133 · a data terminal for cross-venue prediction markets. Nothing here is trading
-          advice or a solicitation. Markets move: verify on-venue before acting.
-          <span className="ftr-links">
+          <p className="ftr-line1">
+            gap133 · a data terminal for cross-venue prediction markets. Nothing here is trading
+            advice or a solicitation. Markets move: verify on-venue before acting.
+          </p>
+          <p className="ftr-line2">
             <a href="/guide">guide</a> · <a href="/privacy">privacy</a> ·{' '}
             <a href="/terms">terms</a> · <a href="mailto:hello@gap133.xyz">contact</a>
-          </span>
+          </p>
         </div>
       </footer>
     </>
