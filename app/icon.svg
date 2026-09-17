@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- favicon: the spiral gauge mark, mark-only crop, dark bg -->
+  <rect width="64" height="64" rx="10" fill="#0A0E14"/>
+  <g fill="none" stroke="#FFB000" stroke-width="5" stroke-linecap="square">
+    <path d="M 6 6 A 40 40 0 0 0 46 46"/>
+    <path d="M 62 24 A 24 24 0 0 1 38 0" transform="translate(0,6)"/>
+    <path d="M 54 46 A 15 15 0 0 1 39 31"/>
+  </g>
+  <rect x="41" y="39" width="9" height="9" fill="#FFB000" transform="rotate(45 45.5 43.5)"/>
+</svg>

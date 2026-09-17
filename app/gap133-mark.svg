@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 320">
+  <!-- gap133 mark: golden-ratio spiral gauge.
+       Golden rectangle 512 x 316.5 (512/1.618 = 316.5).
+       Partition squares: 316.5, 195.5, 121, 74.6, 46, 28.5 (Fibonacci x phi).
+       Spiral: quarter arcs through partition points. Stroke width 26.
+       Acid diamond in the spiral eye, rotated 45deg. -->
+  <g fill="none" stroke="#0E0E0C" stroke-width="26" stroke-linecap="square">
+    <!-- construction partition (hairlines) -->
+    <g stroke-width="4" opacity="0.35">
+      <line x1="316.5" y1="0" x2="316.5" y2="316.5"/>
+      <line x1="316.5" y1="195.5" x2="512" y2="195.5"/>
+      <line x1="437.5" y1="195.5" x2="437.5" y2="316.5"/>
+      <line x1="391" y1="242" x2="512" y2="242"/>
+    </g>
+    <!-- the spiral: quarter arcs -->
+    <!-- largest arc: radius 316.5 centered at (316.5,0), from (0,0) to (316.5,316.5) -->
+    <path d="M 0 0 A 316.5 316.5 0 0 0 316.5 316.5"/>
+    <!-- next: radius 195.5 centered at (316.5,195.5): from (316.5,316.5)? actually (512,195.5) arc to (316.5,0) -->
+    <path d="M 512 195.5 A 195.5 195.5 0 0 1 316.5 0"/>
+    <!-- next: radius 121 centered (437.5,195.5): (437.5,316.5)->(316.5? no (512? ) -->
+    <path d="M 437.5 316.5 A 121 121 0 0 1 316.5 195.5" transform="translate(121,0)"/>
+    <!-- small arcs -->
+    <path d="M 437.5 242 A 46.5 46.5 0 0 1 391 195.5"/>
+    <path d="M 391 242 A 28.5 28.5 0 0 1 419.5 270.5"/>
+  </g>
+  <!-- acid diamond in the eye -->
+  <rect x="404" y="242" width="30" height="30" fill="#C6F211" transform="rotate(45 419 257)"/>
+</svg>
