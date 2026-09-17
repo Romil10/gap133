@@ -145,6 +145,14 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
     return '';
   };
 
+  // tooltip per row explaining the flash, only when a flash is showing
+  const flashTip = (p: MatchedPair): string => {
+    const cls = flashClass(p);
+    if (cls === 'flash-up') return 'Gap widened since last scan (divergence growing)';
+    if (cls === 'flash-down') return 'Gap narrowed since last scan (venues converging)';
+    return '';
+  };
+
   const feedBad = !meta.pmHealthy || !meta.kxHealthy;
   const staleAge = Date.now() - new Date(meta.fetchedAt).getTime();
 
@@ -281,6 +289,9 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
                 : showReview
                   ? 'Review band (held back from the main board)'
                   : 'Cross-venue divergence board'}
+              <span className="flash-legend" title="Rows flash for a moment after each scan when a gap changes">
+                <i className="lg-up" /> gap narrowing <i className="lg-down" /> gap widening
+              </span>
             </span>
             <span className="board-ctl">
               <input
@@ -327,6 +338,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
                       p={p}
                       rowId={'row-' + rowKey}
                       className={`${flashClass(p)} ${hlKey === rowKey ? 'hl' : ''}`}
+                      title={flashTip(p)}
                       expanded={expanded === rowKey}
                       onToggle={() => {
                         const next = expanded === rowKey ? null : rowKey;
@@ -500,7 +512,7 @@ interface GapPoint { t: number; kx: number | null; pm: number | null; gap: numbe
 interface VolumePoint { t: number; kxVol: number | null; pmVol: number | null; }
 
 function RowWithDrawer({
-  rowKey, p, rowId, className, expanded, onToggle, children,
+  rowKey, p, rowId, className, expanded, onToggle, title, children,
 }: {
   rowKey: string;
   p: MatchedPair;
@@ -508,11 +520,12 @@ function RowWithDrawer({
   className: string;
   expanded: boolean;
   onToggle: () => void;
+  title?: string;
   children: React.ReactNode;
 }) {
   return (
     <>
-      <tr id={rowId} className={`${className} ${expanded ? 'exp' : ''}`} onClick={onToggle} style={{ cursor: 'pointer' }} title="Click for market analytics">
+      <tr id={rowId} className={`${className} ${expanded ? 'exp' : ''}`} onClick={onToggle} style={{ cursor: 'pointer' }} title={title}>
         {children}
       </tr>
       {expanded && (
