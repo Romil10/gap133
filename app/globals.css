@@ -596,10 +596,19 @@ html[data-theme="daylight"] .legal b { color: var(--text); background: linear-gr
 .guide-brand { display: flex; align-items: center; gap: 18px; margin-top: 14px; }
 .guide-brand h1 { margin-top: 0; }
 .backlink {
+  display: inline-flex; align-items: center; gap: 7px;
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--muted);
+  text-transform: uppercase; color: var(--text);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 7px 14px 7px 10px;
+  background: transparent;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
-.backlink:hover { color: var(--accent); }
+.backlink:hover {
+  color: var(--accent-ink, var(--text));
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
 .guide h1 {
   font-family: var(--font-display);
   font-size: clamp(30px, 5vw, 44px);
