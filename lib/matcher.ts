@@ -134,6 +134,15 @@ export function matchVenues(kalshi: KXMarket[], polymarket: PMMarket[]): Matched
 
 export const STALE_MS = 24 * 60 * 60 * 1000;
 
+// 150ms gap between Kalshi candlestick calls: gentle pacing to stay under
+// rate limits when enriching a full board in parallel.
+let kxChain: Promise<void> = Promise.resolve();
+function kxCue(): Promise<void> {
+  const next = kxChain.then(() => new Promise<void>((r) => setTimeout(r, 150)));
+  kxChain = next.catch(() => {});
+  return next;
+}
+
 /** Apply the staleness gate to matched pairs. Kalshi's updated_time is the
  *  last ADMIN change (can be months old on actively-traded markets — verified:
  *  AOC trades daily, updated_time said April). The reliable Kalshi signal is
@@ -144,15 +153,17 @@ export async function enrichStaleness(pairs: MatchedPair[]): Promise<void> {
   const now = Date.now();
   await Promise.all(
     pairs.map(async (p) => {
-      // Kalshi: newest hourly candle (1 call per pair, 2-min cache shared via fetch revalidate)
+      // Kalshi: newest hourly candle (1 call per pair; fetch revalidate caches 2 min).
+      // Serialised through kxCue so 25 parallel bursts don't trip Kalshi limits.
       if (!p.kxLastTs) {
         const series = p.kx.ticker.split('-')[0];
         try {
+          await kxCue();
           const endTs = Math.floor(now / 1000);
           const startTs = Math.floor((now - 3 * 86_400_000) / 1000);
           const res = await fetch(
             `https://api.elections.kalshi.com/trade-api/v2/series/${series}/markets/${p.kx.ticker}/candlesticks?start_ts=${startTs}&end_ts=${endTs}&period_interval=60`,
-            { next: { revalidate: 120 }, signal: AbortSignal.timeout(12_000), headers: { 'User-Agent': 'Mozilla/5.0' } }
+            { cache: 'no-store', signal: AbortSignal.timeout(12_000), headers: { 'User-Agent': 'Mozilla/5.0' } }
           );
           if (res.ok) {
             const d: any = await res.json();
