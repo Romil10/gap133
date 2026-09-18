@@ -567,6 +567,8 @@ function RowWithDrawer({
 function Drawer({ p, rowKey }: { p: MatchedPair; rowKey: string }) {
   const [data, setData] = useState<{ gap: GapPoint[]; volume: VolumePoint[] } | null>(null);
   const [err, setErr] = useState(false);
+  const [depth, setDepth] = useState<DepthData | null>(null);
+  const [depthErr, setDepthErr] = useState(false);
 
   useEffect(() => {
     let dead = false;
@@ -583,6 +585,26 @@ function Drawer({ p, rowKey }: { p: MatchedPair; rowKey: string }) {
       .catch(() => { if (!dead) setErr(true); });
     return () => { dead = true; };
   }, [p.kx.ticker, p.pm.clobTokenIds, p.pm.id, p.kx.title, p.kx.eventTitle]);
+
+  // order-book depth: fetched when the drawer opens (PM CLOB via our API route;
+  // Kalshi top-of-book sizes ship in the snapshot payload)
+  useEffect(() => {
+    let dead = false;
+    const yesTokens = (() => { try { return JSON.parse(p.pm.clobTokenIds ?? '[]'); } catch { return []; } })();
+    if (!yesTokens?.[0]) { setDepthErr(true); return; }
+    const params = new URLSearchParams({
+      token: yesTokens[0],
+      kxBidSize: p.kx.bidSize?.toString() ?? '',
+      kxAskSize: p.kx.askSize?.toString() ?? '',
+      kxYesBid: p.kxYes?.toString() ?? '',
+      pmYes: p.pmYes?.toString() ?? '',
+    });
+    fetch(`/api/depth?${params}`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('depth failed'))))
+      .then((d) => { if (!dead) setDepth(d); })
+      .catch(() => { if (!dead) setDepthErr(true); });
+    return () => { dead = true; };
+  }, [p.kx.ticker, p.pm.clobTokenIds, p.kx.bidSize, p.kx.askSize, p.kxYes, p.pmYes]);
 
   return (
     <div className="drawer" onClick={(e) => e.stopPropagation()}>
@@ -607,6 +629,75 @@ function Drawer({ p, rowKey }: { p: MatchedPair; rowKey: string }) {
         <span>{p.kx.ticker}</span>
         <span>kalshi {fmtPct(p.kxYes)} · polymarket {fmtPct(p.pmYes)}</span>
       </div>
+      <DepthPanel p={p} depth={depth} err={depthErr} />
+    </div>
+  );
+}
+
+interface DepthData {
+  pm: { bid: { price: number; size: number } | null; ask: { price: number; size: number } | null };
+  kx: { bidSize: number | null; askSize: number | null };
+}
+
+function DepthPanel({ p, depth, err }: { p: MatchedPair; depth: DepthData | null; err: boolean }) {
+  const fmtN = (n: number | null | undefined) =>
+    n === null || n === undefined ? '—' : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n.toFixed(0);
+
+  const kxBidSz = depth?.kx.bidSize ?? null;
+  const kxAskSz = depth?.kx.askSize ?? null;
+  const pmBidSz = depth?.pm.bid?.size ?? null;
+  const pmAskSz = depth?.pm.ask?.size ?? null;
+
+  // executability: cross-venue trade lifts one ask and hits the other bid.
+  // The size you can put on is the min of the two legs.
+  const kxYes = p.kxYes, pmYes = p.pmYes;
+  let buyLeg: { venue: string; size: number | null; price: number | null } | null = null;
+  let sellLeg: { venue: string; size: number | null; price: number | null } | null = null;
+  if (kxYes !== null && pmYes !== null && depth) {
+    if (kxYes < pmYes) {
+      buyLeg = { venue: 'kalshi', size: kxAskSz, price: p.kx.yesAsk };
+      sellLeg = { venue: 'polymarket', size: pmBidSz, price: depth.pm.bid?.price ?? null };
+    } else {
+      buyLeg = { venue: 'polymarket', size: pmAskSz, price: depth.pm.ask?.price ?? null };
+      sellLeg = { venue: 'kalshi', size: kxBidSz, price: kxYes };
+    }
+  }
+  const execSize = buyLeg && sellLeg && buyLeg.size !== null && sellLeg.size !== null
+    ? Math.min(buyLeg.size, sellLeg.size) : null;
+
+  return (
+    <div className="depth">
+      <div className="dlabel">order-book depth · top of book</div>
+      {err && <div className="dempty">depth unavailable right now</div>}
+      {!err && !depth && <div className="dempty">loading depth…</div>}
+      {depth && (
+        <div className="depthgrid">
+          <div className="depthcell">
+            <div className="dven">kalshi</div>
+            <div className="drow"><span>bid</span><span className="num">{fmtPct(p.kxYes)}</span><span className="num">{fmtN(kxBidSz)} ctr</span></div>
+            <div className="drow"><span>ask</span><span className="num">{fmtPct(p.kx.yesAsk)}</span><span className="num">{fmtN(kxAskSz)} ctr</span></div>
+          </div>
+          <div className="depthcell">
+            <div className="dven">polymarket</div>
+            <div className="drow"><span>bid</span><span className="num">{depth.pm.bid ? fmtPct(depth.pm.bid.price) : '—'}</span><span className="num">{fmtN(pmBidSz)} sh</span></div>
+            <div className="drow"><span>ask</span><span className="num">{depth.pm.ask ? fmtPct(depth.pm.ask.price) : '—'}</span><span className="num">{fmtN(pmAskSz)} sh</span></div>
+          </div>
+          <div className="depthcell exec">
+            <div className="dven">cross-venue executable</div>
+            {buyLeg && sellLeg ? (
+              <>
+                <div className="drow"><span>buy {buyLeg.venue}</span><span className="num">{fmtPct(buyLeg.price)}</span><span className="num">{fmtN(buyLeg.size)}</span></div>
+                <div className="drow"><span>sell {sellLeg.venue}</span><span className="num">{fmtPct(sellLeg.price)}</span><span className="num">{fmtN(sellLeg.size)}</span></div>
+                <div className="dexec">
+                  {execSize !== null
+                    ? <>min leg: <b>{fmtN(execSize)}</b> {buyLeg.venue === 'kalshi' ? 'contracts' : 'shares'} (~${fmtN(execSize)}) at top of book</>
+                    : 'one leg has no visible size'}
+                </div>
+              </>
+            ) : 'book data incomplete'}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

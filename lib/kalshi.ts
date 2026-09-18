@@ -15,6 +15,9 @@ export interface KXMarket {
   updatedAt: string | null;
   // resolution rules text (for the Jev review layer)
   rules: string | null;
+  // top-of-book contract counts at best YES bid/ask (public payload)
+  bidSize: number | null;
+  askSize: number | null;
 }
 
 interface RawKXMarket {
@@ -23,6 +26,8 @@ interface RawKXMarket {
   volume_fp?: string;
   yes_bid_dollars?: string;
   yes_ask_dollars?: string;
+  yes_bid_size_fp?: string;
+  yes_ask_size_fp?: string;
   updated_time?: string;
   rules_primary?: string;
 }
@@ -50,6 +55,8 @@ export async function fetchKalshiTop(limit = 150, maxPages = 4): Promise<KXMarke
           volume: parseFloat(m.volume_fp ?? '0') || 0,
           updatedAt: m.updated_time ?? null,
           rules: (m.rules_primary ?? '').slice(0, 800) || null,
+          bidSize: m.yes_bid_size_fp ? parseFloat(m.yes_bid_size_fp) || null : null,
+          askSize: m.yes_ask_size_fp ? parseFloat(m.yes_ask_size_fp) || null : null,
         });
       }
     }
