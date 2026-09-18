@@ -599,15 +599,15 @@ html[data-theme="daylight"] .legal b { color: var(--text); background: linear-gr
   display: inline-flex; align-items: center; gap: 7px;
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--text);
-  border: 1px solid var(--border); border-radius: 999px;
+  border: var(--border-w) solid var(--text); border-radius: 999px;
   padding: 7px 14px 7px 10px;
-  background: transparent;
+  background: var(--panel);
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 .backlink:hover {
-  color: var(--accent-ink, var(--text));
+  color: var(--accent-ink);
   border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  background: var(--accent);
 }
 .guide h1 {
   font-family: var(--font-display);
@@ -706,7 +706,6 @@ html[data-theme="daylight"] .hero h1 .hl {
   display: inline-block;
 }
 html[data-theme="daylight"] .notice.upsell a,
-html[data-theme="daylight"] .backlink:hover,
 html[data-theme="daylight"] .ftr a,
 html[data-theme="daylight"] .guide a {
   color: var(--text);
