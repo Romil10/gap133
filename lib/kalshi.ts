@@ -13,6 +13,8 @@ export interface KXMarket {
   volume: number;
   // last material market update (ISO string from Kalshi), for the staleness gate
   updatedAt: string | null;
+  // resolution rules text (for the Jev review layer)
+  rules: string | null;
 }
 
 interface RawKXMarket {
@@ -22,6 +24,7 @@ interface RawKXMarket {
   yes_bid_dollars?: string;
   yes_ask_dollars?: string;
   updated_time?: string;
+  rules_primary?: string;
 }
 
 export async function fetchKalshiTop(limit = 150, maxPages = 4): Promise<KXMarket[]> {
@@ -46,6 +49,7 @@ export async function fetchKalshiTop(limit = 150, maxPages = 4): Promise<KXMarke
           yesAsk: m.yes_ask_dollars ? parseFloat(m.yes_ask_dollars) : null,
           volume: parseFloat(m.volume_fp ?? '0') || 0,
           updatedAt: m.updated_time ?? null,
+          rules: (m.rules_primary ?? '').slice(0, 800) || null,
         });
       }
     }

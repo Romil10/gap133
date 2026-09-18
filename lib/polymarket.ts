@@ -12,6 +12,8 @@ export interface PMMarket {
   liquidity: number | null;
   endDate: string | null;
   slug: string | null;
+  // market description (resolution text, for the Jev review layer)
+  description: string | null;
 }
 
 export async function fetchPolymarketTop(limit = 150, maxPages = 2): Promise<PMMarket[]> {
@@ -45,6 +47,7 @@ export async function fetchPolymarketTop(limit = 150, maxPages = 2): Promise<PMM
       liquidity: m.liquidity ?? 0,
       endDate: m.endDate ?? null,
       slug: m.slug ?? null,
+      description: (m.description ?? '').slice(0, 800) || null,
     }));
 }
 

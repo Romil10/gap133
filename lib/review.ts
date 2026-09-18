@@ -53,7 +53,13 @@ export async function reviewBand(pairs: MatchedPair[]): Promise<{ judged: number
   await Promise.all(
     toJudge.map(async (p) => {
       const h = titleHash(p.kx.title ?? '', p.pm.question ?? '');
-      const v = await jevSameEvent(p.kx.title ?? '', p.kx.eventTitle ?? '', null, p.pm.question ?? '', null);
+      const v = await jevSameEvent(
+        p.kx.title ?? '',
+        p.kx.eventTitle ?? '',
+        (p.kx as any).rules ?? null,
+        p.pm.question ?? '',
+        (p.pm as any).description ?? null
+      );
       if (!v) return;
       judged++;
       await saveVerdict(p.kx.ticker, p.pm.id, v.probability, h).catch(() => {});
