@@ -578,7 +578,7 @@ html[data-theme="daylight"] .legal b { color: var(--text); background: linear-gr
 .legal ul { margin: 8px 0 14px 20px; }
 .legal li { list-style: none; position: relative; padding-left: 4px; margin-bottom: 8px; }
 .legal li::before { content: '>'; color: var(--accent); font-family: var(--font-mono); position: absolute; left: -16px; }
-.legal a { color: var(--accent); text-decoration: underline; }
+.legal a:not(.backlink) { color: var(--accent); text-decoration: underline; }
 
 /* ---------- footer ---------- */
 .ftr { border-top: var(--border-w) solid var(--line); padding: 22px 0 40px; color: var(--faint); font-size: 11px; line-height: 1.8; }
@@ -598,7 +598,8 @@ html[data-theme="daylight"] .legal b { color: var(--text); background: linear-gr
 .backlink {
   display: inline-flex; align-items: center; gap: 7px;
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--text);
+  text-transform: uppercase; color: var(--text) !important;
+  text-decoration: none !important;
   border: var(--border-w) solid var(--text); border-radius: 999px;
   padding: 7px 14px 7px 10px;
   background: var(--panel);
