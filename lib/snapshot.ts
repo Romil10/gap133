@@ -184,6 +184,13 @@ export async function getSnapshot(maxAgeMs = 120_000): Promise<Snapshot> {  if (
       await enrichStaleness(pairs.slice(0, 60)); // top-60 only: tier caps at 49 desk pairs anyway
     } catch {}
 
+    // Jev review layer: judges the review band (verdicts cached in Postgres,
+    // budgeted per cycle), promoting same-event pairs and dismissing different ones.
+    try {
+      const { reviewBand } = await import('./review');
+      await reviewBand(pairs);
+    } catch {}
+
     const snap: Snapshot = {
       pairs,
       pmCount: pm.length,

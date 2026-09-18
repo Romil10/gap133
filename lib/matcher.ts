@@ -70,6 +70,10 @@ export interface MatchedPair {
   feePmCents: number;
   netPositive: boolean;
   pmCategory: string;
+  // Jev review layer: calibrated probability the pair is the same event;
+  // jevDismissed = Jev judged it a different event (never resurface).
+  jevProbability?: number;
+  jevDismissed?: boolean;
 }
 
 const NOMIN = /\bnominee|nomination\b/i;

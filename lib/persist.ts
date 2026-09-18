@@ -53,6 +53,16 @@ export async function ensureSchema(): Promise<void> {
       delivered  BOOLEAN NOT NULL DEFAULT false
     );
     CREATE INDEX IF NOT EXISTS idx_al_ticker ON alert_log (kx_ticker, fired_at DESC);
+
+    CREATE TABLE IF NOT EXISTS match_verdicts (
+      kx_ticker   TEXT NOT NULL,
+      pm_id       TEXT NOT NULL,
+      probability REAL NOT NULL,
+      judged_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+      judged_by   TEXT NOT NULL DEFAULT 'jev',
+      title_hash  TEXT NOT NULL,
+      PRIMARY KEY (kx_ticker, pm_id)
+    );
   `);
   initialized = true;
 }
@@ -95,6 +105,32 @@ export async function recordEvent(event: string, dimension?: string): Promise<vo
   await pool.query('INSERT INTO analytics_events (event, dimension) VALUES ($1, $2)', [
     event, dimension ?? null,
   ]);
+}
+
+// ---- match verdicts (Jev review layer) ----
+
+export async function getVerdict(kxTicker: string, pmId: string): Promise<{ probability: number; titleHash: string } | null> {
+  await ensureSchema();
+  const r = await pool.query(
+    'SELECT probability, title_hash FROM match_verdicts WHERE kx_ticker = $1 AND pm_id = $2',
+    [kxTicker, pmId]
+  );
+  return r.rows[0] ? { probability: r.rows[0].probability, titleHash: r.rows[0].title_hash } : null;
+}
+
+export async function saveVerdict(kxTicker: string, pmId: string, probability: number, titleHash: string): Promise<void> {
+  await ensureSchema();
+  await pool.query(
+    `INSERT INTO match_verdicts (kx_ticker, pm_id, probability, title_hash)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (kx_ticker, pm_id) DO UPDATE SET probability = $3, title_hash = $4, judged_at = now()`,
+    [kxTicker, pmId, probability, titleHash]
+  );
+}
+
+import crypto from 'crypto';
+export function titleHash(kxTitle: string, pmQuestion: string): string {
+  return crypto.createHash('sha256').update(`${kxTitle}||${pmQuestion}`).digest('hex').slice(0, 16);
 }
 
 export async function recordAlert(kxTicker: string, pmId: string, gapCents: number, delivered: boolean): Promise<void> {
