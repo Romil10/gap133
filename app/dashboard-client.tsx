@@ -140,8 +140,8 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
   const flashClass = (p: MatchedPair): string => {
     const prev = prevRef.current.get(p.kx.ticker + p.pm.id);
     if (prev === undefined || p.gapCents === null) return '';
-    if (p.gapCents > prev) return 'flash-up'; // gap widened
-    if (p.gapCents < prev) return 'flash-down'; // gap narrowed
+    if (p.gapCents > prev) return 'flash-up'; // gap widened = OPPORTUNITY (green semantics in CSS)
+    if (p.gapCents < prev) return 'flash-down'; // gap narrowed = opportunity dying
     return '';
   };
 
@@ -290,7 +290,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
                   ? 'Review band (held back from the main board)'
                   : 'Cross-venue divergence board'}
               <span className="flash-legend" title="Rows flash for a moment after each scan when a gap changes">
-                <i className="lg-up" /> gap narrowing <i className="lg-down" /> gap widening
+                <i className="lg-up" /> gap widening <i className="lg-down" /> gap narrowing
               </span>
             </span>
             <span className="board-ctl">
