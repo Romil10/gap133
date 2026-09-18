@@ -24,10 +24,10 @@ interface RawKXMarket {
   updated_time?: string;
 }
 
-export async function fetchKalshiTop(limit = 150): Promise<KXMarket[]> {
+export async function fetchKalshiTop(limit = 150, maxPages = 4): Promise<KXMarket[]> {
   const rows: KXMarket[] = [];
   let cursor: string | undefined;
-  for (let page = 0; page < 4; page++) {
+  for (let page = 0; page < maxPages; page++) {
     const url = `${KX_BASE}/events?status=open&with_nested_markets=true&limit=200${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
     const res = await fetch(url, {
       next: { revalidate: 120 },

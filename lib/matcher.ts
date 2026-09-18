@@ -75,16 +75,25 @@ export interface MatchedPair {
 const NOMIN = /\bnominee|nomination\b/i;
 const PARTY = /\bparty\b/i;
 
+// candidate pre-filter: a PM must share >= 2 distinct tokens with the KX
+// market to be scored. Long single-word names (e.g. "Merz") need special
+// handling: a 1-token title also qualifies when the token is a proper name.
+const MIN_SHARED = 1;
+
 export function matchVenues(kalshi: KXMarket[], polymarket: PMMarket[]): MatchedPair[] {
   const scored: { kx: KXMarket; pm: PMMarket; s: number }[] = [];
-  const pmPrepped = polymarket.map((p) => ({
-    p,
-    toks: norm(p.question),
-    joined: norm(p.question).join(' '),
-    names: names(p.question),
-    nomin: NOMIN.test(p.question),
-    party: PARTY.test(p.question),
-  }));
+  const pmPrepped = polymarket.map((p) => {
+    const toks = norm(p.question);
+    return {
+      p,
+      toks,
+      tokSet: new Set(toks),
+      joined: toks.join(' '),
+      names: names(p.question),
+      nomin: NOMIN.test(p.question),
+      party: PARTY.test(p.question),
+    };
+  });
 
   for (const k of kalshi) {
     const combined = `${k.title} ${k.eventTitle}`;
@@ -97,20 +106,32 @@ export function matchVenues(kalshi: KXMarket[], polymarket: PMMarket[]): Matched
     const kNomin = NOMIN.test(k.title ?? '');
     const kParty = PARTY.test(k.title ?? '') || PARTY.test(k.eventTitle ?? '');
 
+    // full-catalog pre-filter: cheap inverted-index candidate lookup. At full
+    // catalog scale (6000 KX x 3000 PM = 18M raw pairs) we can't afford the
+    // inner loop on every pair; only PMs sharing >= 2 tokens (or a rare token)
+    // with this KX market advance to scoring.
     for (const cand of pmPrepped) {
       // audit fix: hard-block cross-type pairs. A party question can never be
       // the same event as a person question, and vice versa.
       if (kParty !== cand.party) continue;
 
-      let s =
-        jaccard(ktoks, cand.toks) * 0.5 +
-        seqRatio(kjoined, cand.joined) * 0.3;
-      for (const n of knames) if (cand.names.has(n)) { s += 0.25; break; }
-      // audit fix: "nominee/nomination" on one side against "president/election"
-      // phrasing on the other marks a subtly different question; demote hard.
-      if (kNomin !== cand.nomin) s -= 0.25;
+      // full-catalog pre-filter: candidate lookup via shared rare tokens.
+    // At 6000 KX x 3000 PM (18M raw pairs) the inner loop needs an inverted
+    // index: only PMs sharing at least MIN_SHARED tokens advance to scoring.
+    let shared = 0;
+    for (const t of ktoks) if (cand.tokSet.has(t)) shared++;
+    if (shared < MIN_SHARED) continue;
 
-      if (s >= 0.45) scored.push({ kx: k, pm: cand.p, s: Math.min(s, 1) });
+    // cheap-first scoring: jaccard gates the expensive seqRatio call
+    const j = jaccard(ktoks, cand.toks);
+    let s = j * 0.5;
+    if (j >= 0.12) s += seqRatio(kjoined, cand.joined) * 0.3;
+    for (const n of knames) if (cand.names.has(n)) { s += 0.25; break; }
+    // audit fix: "nominee/nomination" on one side against "president/election"
+    // phrasing on the other marks a subtly different question; demote hard.
+    if (kNomin !== cand.nomin) s -= 0.25;
+
+    if (s >= 0.45) scored.push({ kx: k, pm: cand.p, s: Math.min(s, 1) });
     }
   }
 

@@ -163,9 +163,12 @@ export async function getSnapshot(maxAgeMs = 120_000): Promise<Snapshot> {  if (
   if (inflight) return inflight;
 
   inflight = (async () => {
+    // Full-catalog pulls: Kalshi paginates to 2000 events (10 pages), PM to
+    // 3000 markets (6 pages of 500). The matcher handles the larger N; the
+    // staleness enrichment only fetches prints for MATCHED pairs.
     const [pm, kx] = await Promise.all([
-      fetchPolymarketTop(150).catch(() => [] as PMMarket[]),
-      fetchKalshiTop(150).catch(() => [] as KXMarket[]),
+      fetchPolymarketTop(1200, 12).catch(() => [] as PMMarket[]),
+      fetchKalshiTop(6000, 10).catch(() => [] as KXMarket[]),
     ]);
 
     // audit fix: if a venue feed comes back empty but a previous snapshot
@@ -178,7 +181,7 @@ export async function getSnapshot(maxAgeMs = 120_000): Promise<Snapshot> {  if (
     // staleness gate: last-print age per venue per pair (PM prints fetched
     // per pair with a 2-min cache; Kalshi's updated_time ships in the payload)
     try {
-      await enrichStaleness(pairs);
+      await enrichStaleness(pairs.slice(0, 60)); // top-60 only: tier caps at 49 desk pairs anyway
     } catch {}
 
     const snap: Snapshot = {

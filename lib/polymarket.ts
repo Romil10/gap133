@@ -14,17 +14,21 @@ export interface PMMarket {
   slug: string | null;
 }
 
-export async function fetchPolymarketTop(limit = 150): Promise<PMMarket[]> {
+export async function fetchPolymarketTop(limit = 150, maxPages = 2): Promise<PMMarket[]> {
+  // gamma caps pages at 100 and offsets at ~2500; 25 pages = the full
+  // addressable catalog. Ordered by volume24hr so the liquid surface comes first.
   const raw: any[] = [];
-  for (let off = 0; off < 1000; off += 500) {
+  const PAGE = 100;
+  for (let page = 0; page < maxPages; page++) {
     const res = await fetch(
-      `${PM_BASE}/markets?closed=false&limit=500&offset=${off}`,
+      `${PM_BASE}/markets?closed=false&limit=${PAGE}&offset=${page * PAGE}&order=volume24hr&ascending=false`,
       { next: { revalidate: 120 }, signal: AbortSignal.timeout(20_000) }
     );
     if (!res.ok) break;
     const batch = await res.json();
+    if (!Array.isArray(batch) || batch.length === 0) break;
     raw.push(...batch);
-    if (batch.length < 500) break;
+    if (batch.length < PAGE) break;
   }
   return raw
     .filter((m) => (m.volume24hr ?? 0) > 0)
