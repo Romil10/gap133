@@ -377,6 +377,23 @@ html[data-theme="daylight"] .gapmain.down { background: var(--red); color: #fff;
 .gapbar.big i { background: var(--red); }
 .conf { color: var(--muted); font-size: 11px; }
 
+/* fee-adjusted net gap */
+.netcell { white-space: nowrap; }
+.netmain {
+  font-family: var(--font-mono);
+  font-weight: var(--gap-weight);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.netmain.pos { color: var(--green); }
+.netmain.neg { color: var(--muted); opacity: 0.75; }
+.netpos {
+  display: inline-block; margin-top: 3px;
+  font-family: var(--font-mono); font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent-ink); background: var(--accent);
+  border-radius: 2px; padding: 1px 5px;
+}
+
 /* flash legend in the panel header */
 .flash-legend {
   display: inline-flex; align-items: center; gap: 6px;

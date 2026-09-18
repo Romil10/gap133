@@ -5,6 +5,7 @@
 // question. >= 0.65 auto-match (plus sanity caps), 0.45-0.65 review band.
 
 import { PMMarket, pmYesPriceChecked, pmLastPrintTs } from './polymarket';
+import { netGapCents, pmCategory } from './fees';
 import { KXMarket } from './kalshi';
 
 const STOP = new Set(`will the of in on for a an to be at by this that is are was were do does
@@ -62,6 +63,13 @@ export interface MatchedPair {
   pmLastTs: number | null;
   stale: boolean;
   staleSide: 'kx' | 'pm' | 'both' | null;
+  // fee-adjusted gap (PredictMarketCap formulas): raw gap minus both venues'
+  // taker fees at their own traded prices. netPositive only when it clears.
+  netGap: number | null;
+  feeKxCents: number;
+  feePmCents: number;
+  netPositive: boolean;
+  pmCategory: string;
 }
 
 const NOMIN = /\bnominee|nomination\b/i;
@@ -124,9 +132,14 @@ export function matchVenues(kalshi: KXMarket[], polymarket: PMMarket[]): Matched
       reviewReason = `implausible gap (${gapCents.toFixed(1)}c) — likely mismatched questions`;
     }
     // staleness gate: filled in later by enrichStaleness (needs PM print fetches)
+    const cat = pmCategory(kx.eventTitle ?? '', pm.question ?? '');
+    const { net, feeKx, feePm } = netGapCents(kxYes, pmYes, 'politics', cat);
     out.push({
       kx, pm, score: s, kxYes, pmYes, gapCents, needsReview, reviewReason,
       kxLastTs: null, pmLastTs: null, stale: false, staleSide: null,
+      netGap: net, feeKxCents: feeKx, feePmCents: feePm,
+      netPositive: net !== null && net > 0,
+      pmCategory: cat,
     });
   }
   return out;
