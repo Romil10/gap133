@@ -1,9 +1,12 @@
-// Jev System One match-verification layer.
+// Jev System One match-verification layer, via OpenRouter's Decisions API.
 // Reviews the matcher's review band: are these two markets REALLY the same
 // event? One noul question per pair, calibrated probability back, verdict
 // cached in Postgres (match_verdicts) so each pair is judged once.
 
-const JEV_URL = 'https://api.typesafe.ai/v1/systemone';
+// OpenRouter route: https://openrouter.ai/api/alpha/decisions
+// Model: ~typesafe/jev-latest (redirects to the newest Jev)
+const JEV_URL = 'https://openrouter.ai/api/alpha/decisions';
+const JEV_MODEL = '~typesafe/jev-latest';
 
 export interface JevVerdict {
   probability: number; // 0-1: probability the two markets are the same event
@@ -11,7 +14,7 @@ export interface JevVerdict {
 }
 
 function jevConfigured(): boolean {
-  return !!process.env.TYPESAFE_API_KEY;
+  return !!process.env.OPENROUTER_API_KEY;
 }
 
 /** Ask Jev: is this Kalshi market and this Polymarket market the same event? */
@@ -34,11 +37,12 @@ export async function jevSameEvent(
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        authorization: `Bearer ${process.env.TYPESAFE_API_KEY}`,
+        authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'X-OpenRouter-Title': 'gap133',
       },
       body: JSON.stringify({
+        model: JEV_MODEL,
         state,
-        model: 'jev-latest',
         questions: {
           sameEvent: {
             type: 'noul',
