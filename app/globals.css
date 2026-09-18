@@ -693,7 +693,7 @@ html[data-theme="chrome"] .faq summary::before { content: '+'; color: var(--acce
 .faq details[open] summary::before { content: '\2212'; }
 html[data-theme="midnight"] .faq details[open] summary::before { content: '\2304'; }
 .faq summary::-webkit-details-marker { display: none; }
-.faq details p { padding: 0 16px 15px; margin: 0; color: var(--muted); font-size: 13.5px; }
+.faq details p { padding: 0 16px 15px; margin: 0; color: var(--text); font-size: 13.5px; }
 
 /* ---------- daylight contrast fixes (audit: 2026-09-16) ---------- */
 /* "One number matters: the gap." needs a solid chip on paper, the acid
