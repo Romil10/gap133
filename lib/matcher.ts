@@ -4,7 +4,7 @@
 // minus 0.25 when one side asks a nomination question and the other an election
 // question. >= 0.65 auto-match (plus sanity caps), 0.45-0.65 review band.
 
-import { PMMarket, pmYesPriceChecked, pmLastPrintTs } from './polymarket';
+import { PMMarket, pmYesPriceChecked, pmLastPrintTs, pmTopOfBook } from './polymarket';
 import { netGapCents, pmCategory } from './fees';
 import { KXMarket } from './kalshi';
 
@@ -74,6 +74,9 @@ export interface MatchedPair {
   // jevDismissed = Jev judged it a different event (never resurface).
   jevProbability?: number;
   jevDismissed?: boolean;
+  // cross-venue executable size at top of book (min of the two legs, USD-notional)
+  execSize: number | null;
+  buyVenue: 'kalshi' | 'polymarket' | null;
 }
 
 const NOMIN = /\bnominee|nomination\b/i;
@@ -165,6 +168,7 @@ export function matchVenues(kalshi: KXMarket[], polymarket: PMMarket[]): Matched
       netGap: net, feeKxCents: feeKx, feePmCents: feePm,
       netPositive: net !== null && net > 0,
       pmCategory: cat,
+      execSize: null, buyVenue: null,
     });
   }
   return out;
@@ -213,6 +217,22 @@ export async function enrichStaleness(pairs: MatchedPair[]): Promise<void> {
         p.kxLastTs = Date.parse(p.kx.updatedAt ?? '') || p.kxLastTs;
       }
       p.pmLastTs = await pmLastPrintTs(p.pm.clobTokenIds);
+
+      // executability: PM top-of-book (public CLOB book, cached with the
+      // snapshot cycle); Kalshi sizes already ship in the market payload.
+      if (p.kxYes !== null && p.pmYes !== null) {
+        const pmTop = await pmTopOfBook(p.pm.clobTokenIds);
+        if (p.kxYes < p.pmYes) {
+          p.buyVenue = 'kalshi';
+          const kxLeg = p.kx.askSize, pmLeg = pmTop?.bidSize ?? null;
+          p.execSize = kxLeg !== null && pmLeg !== null ? Math.min(kxLeg, pmLeg) : (kxLeg ?? pmLeg);
+        } else {
+          p.buyVenue = 'polymarket';
+          const pmLeg = pmTop?.askSize ?? null, kxLeg = p.kx.bidSize;
+          p.execSize = pmLeg !== null && kxLeg !== null ? Math.min(pmLeg, kxLeg) : (pmLeg ?? kxLeg);
+        }
+      }
+
       const kxOld = p.kxLastTs !== null && now - p.kxLastTs > STALE_MS;
       const pmOld = p.pmLastTs !== null && now - p.pmLastTs > STALE_MS;
       const unknown = p.kxLastTs === null || p.pmLastTs === null;

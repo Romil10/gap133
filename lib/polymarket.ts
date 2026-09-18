@@ -121,3 +121,44 @@ export async function pmLastPrintTs(clobTokenIds: string | null): Promise<number
   printCache.set(token, { at: Date.now(), lastTs: ts });
   return ts;
 }
+
+// Top-of-book for executability: best bid/ask size from the public CLOB book.
+// Same cache/inflight pattern as prints; one call per market per 2-min window.
+const bookCache = new Map<string, { at: number; bidSize: number | null; askSize: number | null }>();
+const bookInflight = new Map<string, Promise<{ bidSize: number | null; askSize: number | null }>>();
+
+export async function pmTopOfBook(clobTokenIds: string | null): Promise<{ bidSize: number | null; askSize: number | null } | null> {
+  if (!clobTokenIds) return null;
+  let token: string | undefined;
+  try {
+    token = JSON.parse(clobTokenIds)[0];
+  } catch { return null; }
+  if (!token) return null;
+
+  const cached = bookCache.get(token);
+  if (cached && Date.now() - cached.at < PRINT_TTL) return { bidSize: cached.bidSize, askSize: cached.askSize };
+
+  let p = bookInflight.get(token);
+  if (!p) {
+    p = (async () => {
+      try {
+        const res = await fetch(`https://clob.polymarket.com/book?token_id=${token}`, {
+          next: { revalidate: 120 }, signal: AbortSignal.timeout(12_000),
+        });
+        if (!res.ok) return { bidSize: null, askSize: null };
+        const d: any = await res.json();
+        const bid = d?.bids?.[0] ? parseFloat(d.bids[0].size) : NaN;
+        const ask = d?.asks?.[0] ? parseFloat(d.asks[0].size) : NaN;
+        return { bidSize: isFinite(bid) ? bid : null, askSize: isFinite(ask) ? ask : null };
+      } catch {
+        return { bidSize: null, askSize: null };
+      } finally {
+        bookInflight.delete(token);
+      }
+    })();
+    bookInflight.set(token, p);
+  }
+  const r = await p;
+  bookCache.set(token, { at: Date.now(), bidSize: r.bidSize, askSize: r.askSize });
+  return r;
+}

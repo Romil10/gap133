@@ -852,3 +852,8 @@ html[data-theme="daylight"] .tier li::before { color: #5E6B00; }
   color: var(--muted); font-size: 11px;
 }
 .dexec b { color: var(--text); font-family: var(--font-mono); }
+
+.sizecell {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 12px; white-space: nowrap; color: var(--muted);
+}

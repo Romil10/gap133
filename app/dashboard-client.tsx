@@ -6,7 +6,7 @@ import type { MatchedPair } from '../lib/matcher';
 import { polymarketUrl, kalshiUrl } from '../lib/links';
 import { SpiralMark } from './spiral-mark';
 
-type SortKey = 'gap' | 'volume' | 'confidence';
+type SortKey = 'gap' | 'volume' | 'confidence' | 'size';
 type Theme = 'daylight' | 'midnight' | 'chrome';
 
 const POLL_MS = 120_000;
@@ -118,6 +118,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
     arr.sort((a, b) => {
       if (sort === 'gap') return (b.gapCents ?? -1) - (a.gapCents ?? -1);
       if (sort === 'volume') return (b.pm.volume24hr ?? 0) - (a.pm.volume24hr ?? 0);
+      if (sort === 'size') return (b.execSize ?? -1) - (a.execSize ?? -1);
       return b.score - a.score;
     });
     return arr;
@@ -304,7 +305,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
                 aria-label="Search markets by keyword"
               />
               <span className="sortbtns">
-                {(['gap', 'volume', 'confidence'] as SortKey[]).map((k) => (
+                {(['gap', 'size', 'volume', 'confidence'] as SortKey[]).map((k) => (
                   <button key={k} className={sort === k ? 'on' : ''} onClick={() => { setSort(k); track('sort', k); }}>
                     {k}
                   </button>
@@ -324,6 +325,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
                   <th scope="col">Polymarket yes</th>
                   <th scope="col">Gap</th>
                   <th scope="col" title="Gap minus both venues' taker fees at their traded prices">Net</th>
+                  <th scope="col" title="Cross-venue executable size at top of book (min of the two legs)">Size</th>
                   <th scope="col">PM 24h vol</th>
                   <th scope="col">Match</th>
                   <th scope="col" title="Both venues printed within 24h?">Live</th>
@@ -376,6 +378,9 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
                           </>
                         ) : '—'}
                       </td>
+                      <td className="sizecell">
+                        {p.execSize !== null ? `${p.execSize >= 1000 ? `${(p.execSize / 1000).toFixed(1)}k` : p.execSize.toFixed(0)}` : '—'}
+                      </td>
                       <td className="price">${Math.round(p.pm.volume24hr ?? 0).toLocaleString()}</td>
                       <td className="conf">{(p.score * 100).toFixed(0)}%</td>
                       <td className="livecell">
@@ -419,7 +424,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
                 })}
                 {sorted.length === 0 && (
                   <tr>
-                    <td colSpan={9} style={{ color: 'var(--muted)', padding: 24 }}>
+                    <td colSpan={10} style={{ color: 'var(--muted)', padding: 24 }}>
                       No pairs in this view right now. The scanner refreshes every 2 minutes.
                     </td>
                   </tr>
@@ -555,7 +560,7 @@ function RowWithDrawer({
       </tr>
       {expanded && (
         <tr className="drawer-tr">
-          <td colSpan={9} style={{ padding: 0 }}>
+          <td colSpan={10} style={{ padding: 0 }}>
             <Drawer p={p} rowKey={rowKey} />
           </td>
         </tr>
