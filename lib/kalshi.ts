@@ -11,6 +11,8 @@ export interface KXMarket {
   yesBid: number | null;
   yesAsk: number | null;
   volume: number;
+  // last material market update (ISO string from Kalshi), for the staleness gate
+  updatedAt: string | null;
 }
 
 interface RawKXMarket {
@@ -19,6 +21,7 @@ interface RawKXMarket {
   volume_fp?: string;
   yes_bid_dollars?: string;
   yes_ask_dollars?: string;
+  updated_time?: string;
 }
 
 export async function fetchKalshiTop(limit = 150): Promise<KXMarket[]> {
@@ -42,6 +45,7 @@ export async function fetchKalshiTop(limit = 150): Promise<KXMarket[]> {
           yesBid: m.yes_bid_dollars ? parseFloat(m.yes_bid_dollars) : null,
           yesAsk: m.yes_ask_dollars ? parseFloat(m.yes_ask_dollars) : null,
           volume: parseFloat(m.volume_fp ?? '0') || 0,
+          updatedAt: m.updated_time ?? null,
         });
       }
     }

@@ -24,7 +24,7 @@ export async function GET(req: Request) {
   try {
     const [venue, recorded] = await Promise.all([
       fetchHistoryWithTokens(
-        { ticker: kxTicker, eventTitle: url.searchParams.get('kxevent') ?? '', title: url.searchParams.get('kxtitle') ?? '', yesBid: null, yesAsk: null, volume: 0 },
+        { ticker: kxTicker, eventTitle: url.searchParams.get('kxevent') ?? '', title: url.searchParams.get('kxtitle') ?? '', yesBid: null, yesAsk: null, volume: 0, updatedAt: null },
         { id: pmId, question: '', outcomes: null, outcomePrices: null, clobTokenIds: pmClob, volume24hr: 0, volume: 0, liquidity: 0, endDate: null, slug: null },
         pmClob,
         tier

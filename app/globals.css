@@ -388,7 +388,25 @@ html[data-theme="daylight"] .gapmain.down { background: var(--red); color: #fff;
   border-radius: 2px; margin: 0 4px 0 8px; vertical-align: -1px;
 }
 .flash-legend .lg-up { background: color-mix(in srgb, var(--green) 55%, transparent); }
-.flash-legend .lg-down { background: color-mix(in srgb, var(--red) 55%, transparent); }@media (max-width: 768px) { .flash-legend { display: none; } }
+.flash-legend .lg-down { background: color-mix(in srgb, var(--red) 55%, transparent); }@media (max-width:768px){.flash-legend{display:none}}
+
+/* staleness gate: both-live badge + stale demotion */
+.livecell { white-space: nowrap; }
+.livebadge {
+  display: inline-block; padding: 2px 8px;
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--green); border: 1px solid color-mix(in srgb, var(--green) 45%, transparent);
+  border-radius: var(--radius);
+}
+.stalebadge {
+  display: inline-block; padding: 2px 8px;
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--faint); border: 1px dashed var(--line-bright);
+  border-radius: var(--radius);
+}
+tbody tr.stale-row td { color: var(--faint); }
+tbody tr.stale-row .gapmain { opacity: 0.45; }
+tbody tr.stale-row .gapbar i { background: var(--faint); }
 
 .venue-links { white-space: nowrap; }
 .vlink {

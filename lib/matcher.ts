@@ -4,7 +4,7 @@
 // minus 0.25 when one side asks a nomination question and the other an election
 // question. >= 0.65 auto-match (plus sanity caps), 0.45-0.65 review band.
 
-import { PMMarket, pmYesPriceChecked } from './polymarket';
+import { PMMarket, pmYesPriceChecked, pmLastPrintTs } from './polymarket';
 import { KXMarket } from './kalshi';
 
 const STOP = new Set(`will the of in on for a an to be at by this that is are was were do does
@@ -56,6 +56,12 @@ export interface MatchedPair {
   gapCents: number | null;
   needsReview: boolean;
   reviewReason?: string;
+  // staleness gate (PredictMarketCap audit): a pair is only trustworthy when
+  // BOTH venues printed a change recently. Stale = either side silent 24h+.
+  kxLastTs: number | null;
+  pmLastTs: number | null;
+  stale: boolean;
+  staleSide: 'kx' | 'pm' | 'both' | null;
 }
 
 const NOMIN = /\bnominee|nomination\b/i;
@@ -117,7 +123,55 @@ export function matchVenues(kalshi: KXMarket[], polymarket: PMMarket[]): Matched
       needsReview = true;
       reviewReason = `implausible gap (${gapCents.toFixed(1)}c) — likely mismatched questions`;
     }
-    out.push({ kx, pm, score: s, kxYes, pmYes, gapCents, needsReview, reviewReason });
+    // staleness gate: filled in later by enrichStaleness (needs PM print fetches)
+    out.push({
+      kx, pm, score: s, kxYes, pmYes, gapCents, needsReview, reviewReason,
+      kxLastTs: null, pmLastTs: null, stale: false, staleSide: null,
+    });
   }
   return out;
+}
+
+export const STALE_MS = 24 * 60 * 60 * 1000;
+
+/** Apply the staleness gate to matched pairs. Kalshi's updated_time is the
+ *  last ADMIN change (can be months old on actively-traded markets — verified:
+ *  AOC trades daily, updated_time said April). The reliable Kalshi signal is
+ *  the candlestick feed: the newest hourly candle's end = last trade print.
+ *  PM prints come from the CLOB prices-history. Pairs where either side has
+ *  no print within 24h are marked stale and demoted by the UI. */
+export async function enrichStaleness(pairs: MatchedPair[]): Promise<void> {
+  const now = Date.now();
+  await Promise.all(
+    pairs.map(async (p) => {
+      // Kalshi: newest hourly candle (1 call per pair, 2-min cache shared via fetch revalidate)
+      if (!p.kxLastTs) {
+        const series = p.kx.ticker.split('-')[0];
+        try {
+          const endTs = Math.floor(now / 1000);
+          const startTs = Math.floor((now - 3 * 86_400_000) / 1000);
+          const res = await fetch(
+            `https://api.elections.kalshi.com/trade-api/v2/series/${series}/markets/${p.kx.ticker}/candlesticks?start_ts=${startTs}&end_ts=${endTs}&period_interval=60`,
+            { next: { revalidate: 120 }, signal: AbortSignal.timeout(12_000), headers: { 'User-Agent': 'Mozilla/5.0' } }
+          );
+          if (res.ok) {
+            const d: any = await res.json();
+            const c: any[] = d?.candlesticks ?? [];
+            if (c.length) p.kxLastTs = c[c.length - 1].end_period_ts * 1000;
+          }
+        } catch {}
+      } else {
+        p.kxLastTs = Date.parse(p.kx.updatedAt ?? '') || p.kxLastTs;
+      }
+      p.pmLastTs = await pmLastPrintTs(p.pm.clobTokenIds);
+      const kxOld = p.kxLastTs !== null && now - p.kxLastTs > STALE_MS;
+      const pmOld = p.pmLastTs !== null && now - p.pmLastTs > STALE_MS;
+      const unknown = p.kxLastTs === null || p.pmLastTs === null;
+      if (kxOld && pmOld) { p.stale = true; p.staleSide = 'both'; }
+      else if (kxOld) { p.stale = true; p.staleSide = 'kx'; }
+      else if (pmOld) { p.stale = true; p.staleSide = 'pm'; }
+      else if (unknown) { p.stale = false; p.staleSide = null; } // can't verify ≠ stale: don't demote on missing data
+      else { p.stale = false; p.staleSide = null; }
+    })
+  );
 }

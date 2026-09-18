@@ -324,6 +324,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
                   <th scope="col">Gap</th>
                   <th scope="col">PM 24h vol</th>
                   <th scope="col">Match</th>
+                  <th scope="col" title="Both venues printed within 24h?">Live</th>
                 </tr>
               </thead>
               <tbody>
@@ -337,7 +338,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
                       rowKey={rowKey}
                       p={p}
                       rowId={'row-' + rowKey}
-                      className={`${flashClass(p)} ${hlKey === rowKey ? 'hl' : ''}`}
+                      className={`${flashClass(p)} ${hlKey === rowKey ? 'hl' : ''} ${p.stale ? 'stale-row' : ''}`}
                       title={flashTip(p)}
                       expanded={expanded === rowKey}
                       onToggle={() => {
@@ -365,6 +366,18 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
                       </td>
                       <td className="price">${Math.round(p.pm.volume24hr ?? 0).toLocaleString()}</td>
                       <td className="conf">{(p.score * 100).toFixed(0)}%</td>
+                      <td className="livecell">
+                        {p.stale ? (
+                          <span
+                            className="stalebadge"
+                            title={p.staleSide === 'kx' ? 'Kalshi quote not refreshed in 24h+' : p.staleSide === 'pm' ? 'Polymarket quote not refreshed in 24h+' : 'One side has no recent print data'}
+                          >
+                            stale{p.staleSide ? `·${p.staleSide}` : ''}
+                          </span>
+                        ) : (
+                          <span className="livebadge" title="Both venues printed within the last 24h">both live</span>
+                        )}
+                      </td>
                       <td className="venue-links">
                         {p.pm.slug && (
                           <a
@@ -394,7 +407,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
                 })}
                 {sorted.length === 0 && (
                   <tr>
-                    <td colSpan={7} style={{ color: 'var(--muted)', padding: 24 }}>
+                    <td colSpan={8} style={{ color: 'var(--muted)', padding: 24 }}>
                       No pairs in this view right now. The scanner refreshes every 2 minutes.
                     </td>
                   </tr>
@@ -530,7 +543,7 @@ function RowWithDrawer({
       </tr>
       {expanded && (
         <tr className="drawer-tr">
-          <td colSpan={7} style={{ padding: 0 }}>
+          <td colSpan={8} style={{ padding: 0 }}>
             <Drawer p={p} rowKey={rowKey} />
           </td>
         </tr>

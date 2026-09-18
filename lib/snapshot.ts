@@ -1,6 +1,6 @@
 import { fetchPolymarketTop, PMMarket } from './polymarket';
 import { fetchKalshiTop, KXMarket } from './kalshi';
-import { matchVenues, MatchedPair } from './matcher';
+import { matchVenues, enrichStaleness, MatchedPair } from './matcher';
 import { kalshiUrl, polymarketUrl } from './links';
 
 export interface Snapshot {
@@ -174,6 +174,12 @@ export async function getSnapshot(maxAgeMs = 120_000): Promise<Snapshot> {  if (
     const pmHealthy = pm.length > 0;
     const kxHealthy = kx.length > 0;
     const pairs = pmHealthy && kxHealthy ? matchVenues(kx, pm) : cache ? cache.pairs : matchVenues(kx, pm);
+
+    // staleness gate: last-print age per venue per pair (PM prints fetched
+    // per pair with a 2-min cache; Kalshi's updated_time ships in the payload)
+    try {
+      await enrichStaleness(pairs);
+    } catch {}
 
     const snap: Snapshot = {
       pairs,

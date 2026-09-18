@@ -70,3 +70,47 @@ export function pmYesPriceChecked(m: PMMarket): number | null {
     return null;
   }
 }
+
+// Staleness gate: fetch the last trade print for a market from the CLOB
+// prices-history endpoint (fidelity=10, 1d window; the last point is the
+// freshest print). One call per market, cached 2 min. We only need this for
+// the pairs shown on the board (~33), not the full top-150 universe.
+const printCache = new Map<string, { at: number; lastTs: number | null }>();
+const PRINT_TTL = 120_000;
+const printInflight = new Map<string, Promise<number | null>>();
+
+export async function pmLastPrintTs(clobTokenIds: string | null): Promise<number | null> {
+  if (!clobTokenIds) return null;
+  let token: string | undefined;
+  try {
+    token = JSON.parse(clobTokenIds)[0];
+  } catch { return null; }
+  if (!token) return null;
+
+  const cached = printCache.get(token);
+  if (cached && Date.now() - cached.at < PRINT_TTL) return cached.lastTs;
+
+  let p = printInflight.get(token);
+  if (!p) {
+    p = (async () => {
+      try {
+        const res = await fetch(
+          `https://clob.polymarket.com/prices-history?market=${token}&interval=1d&fidelity=10`,
+          { next: { revalidate: 120 }, signal: AbortSignal.timeout(12_000) }
+        );
+        if (!res.ok) return null;
+        const d: any = await res.json();
+        const h: any[] = d?.history ?? [];
+        return h.length ? h[h.length - 1].t * 1000 : null;
+      } catch {
+        return null;
+      } finally {
+        printInflight.delete(token);
+      }
+    })();
+    printInflight.set(token, p);
+  }
+  const ts = await p;
+  printCache.set(token, { at: Date.now(), lastTs: ts });
+  return ts;
+}
