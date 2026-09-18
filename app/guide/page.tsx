@@ -34,8 +34,20 @@ const FAQ: { q: string; a: string }[] = [
     a: "It is our matcher's confidence that the two rows are really the same event. Matching is done by title and meaning, and it is deliberately conservative: anything scoring under 65 percent is held out of the main board, and any pair showing an implausibly wide gap (25 cents or more) is demoted automatically, because wide gaps almost always mean the questions are subtly different (a nominee market versus an election-winner market, for example). We would rather hide a real gap than show you a fake one.",
   },
   {
+    q: 'What do Net and Size mean?',
+    a: 'Net is the gap minus both venues taker fees at their actual traded prices (Kalshi and Polymarket publish different fee schedules; geopolitics questions on Polymarket are fee-free). The net + badge means the gap survives real costs. Size is how much you could put on cross-venue at top of book: the smaller of the two order-book legs. Together they answer the only two questions that matter about a gap: is it real after costs, and is it real at size.',
+  },
+  {
+    q: 'What does the Live column mean?',
+    a: 'A green both live badge means both venues printed a trade within the last 24 hours. If one side has gone quiet, the row is marked stale and demoted to grey: a price that stopped moving is a fossil, not a quote. This gate exists because showing stale prices next to live ones is how scanners manufacture fake gaps.',
+  },
+  {
+    q: 'How do I know the pairs are really the same event?',
+    a: 'Three gates. A deterministic matcher proposes the match, then Jev (a probabilistic decision model) reads both markets resolution rules and assigns a calibrated probability the two are the same event; below 0.80 a pair never reaches the board, and different-event pairs are dismissed permanently. Then the staleness gate checks both venues are still printing. The full evidence trail for every pair is public on the matching audit page.',
+  },
+  {
     q: 'Why can I not see some pairs on the board?',
-    a: 'They are in the review band: pairs we matched below the confidence threshold. Click the inspect link in the notice above the board to see them with their scores. Transparency about what we are unsure of is a feature, not a bug.',
+    a: 'They are in the review band: pairs the matcher proposed but the gates did not clear. The matching audit page shows all of them with their scores, Jev probabilities, and dismissal state. Transparency about what we are unsure of is a feature, not a bug.',
   },
   {
     q: 'A row disappeared or changed since I last looked. Why?',
@@ -92,8 +104,11 @@ export default function Guide() {
           real-world event often trades at two different prices at the same moment.
         </p>
         <p>
-          That difference is the gap. gap133 finds it, measures it in cents, ranks every matched
-          market by how wide the gap is, and refreshes the whole board continuously.
+          That difference is the gap. gap133 finds it, measures it in cents, then does the two
+          things other scanners skip: it subtracts the taker fees so you see the net edge, and it
+          reads both order books so you see the size you could actually put on. It refreshes the
+          whole board continuously, and it publishes its own matching evidence so you can check
+          the checker.
         </p>
       </section>
 
@@ -104,16 +119,44 @@ export default function Guide() {
           <li><b>Event:</b> the question being traded, with the Kalshi market ID underneath.</li>
           <li><b>Kalshi yes:</b> the current YES price on Kalshi, in cents.</li>
           <li><b>Polymarket yes:</b> the current YES price on Polymarket, in cents.</li>
-          <li><b>Gap:</b> the difference between the two, in cents. The bar under the figure shows relative width at a glance.</li>
+          <li><b>Gap:</b> the raw difference between the two, in cents. The bar under the figure shows relative width at a glance.</li>
+          <li><b>Net:</b> the gap minus both venues&apos; taker fees at their actual traded prices. The <b>net&nbsp;+</b> badge appears only when a gap survives real costs — the figure most scanners leave out.</li>
+          <li><b>Size:</b> how much you could actually put on cross-venue at top of book, in notional dollars. A 3¢ gap with $400 behind it is a rounding error; the same gap with $40,000 is a trade.</li>
+          <li><b>Live:</b> both venues printed a trade within the last 24 hours (green <b>both live</b>), or one side has gone quiet and the row is demoted to grey (<b>stale</b>). A price that stopped moving is a fossil, not a quote.</li>
           <li><b>PM 24h vol:</b> how much was traded on the Polymarket side in the last 24 hours, a rough gauge of liquidity.</li>
           <li><b>Match:</b> our confidence that these two rows are really the same event. Below 65 percent is held out of the main board.</li>
         </ul>
         <p>
-          The board sorts three ways: by gap (biggest disagreements first), by volume, and by match
-          confidence. The top strip shows the counts. Every row carries two link chips, PM&nwarr;
-          and KX&nwarr; (with arrows), that open the exact market on each venue. Above the board, a
-          live ticker scrolls the widest current gaps; the header chip counts down to the next
-          scan; and when a gap moves between scans, the row flashes green or red.
+          The board sorts four ways: by gap (biggest disagreements first), by size (most
+          executable first), by volume, and by match confidence. The top strip shows the counts.
+          Every row carries two link chips, PM&nwarr; and KX&nwarr; (with arrows), that open the
+          exact market on each venue. Above the board, a live ticker scrolls the widest current
+          gaps; the header chip counts down to the next scan; and when a gap moves between scans,
+          the row flashes green or red.
+        </p>
+        <p>
+          Open any row and the drawer gives the full workup: seven-day gap and venue charts,
+          hourly Kalshi volume, and the order-book panel — top-of-book price and size on both
+          venues, plus the cross-venue executable figure (the smaller of the two legs, with the
+          buy side resolved from the gap direction).
+        </p>
+      </section>
+
+      <section>
+        <h2>Why you can trust it</h2>
+        <p>
+          Every pair on the board passes three independent gates. First, a deterministic matcher
+          (token overlap, sequence similarity, hard blocks on party-vs-person pairs) proposes the
+          match. Second, Jev — a System One model — reads both markets&apos; actual resolution rules
+          and returns a calibrated probability the two are the same event; anything below 0.80
+          stays out of the board, and different-event pairs are dismissed permanently. Third, the
+          staleness gate: either venue silent for 24 hours demotes the row.
+        </p>
+        <p>
+          The receipts are public. The <Link href="/audit">matching audit</Link> shows every pair
+          we&apos;ve ever matched — the ones on the board, the ones held, and the ones dismissed —
+          with match scores, Jev probabilities, and last-print ages. Most terminals hide this
+          layer. Ours is the product.
         </p>
       </section>
 
@@ -143,16 +186,19 @@ export default function Guide() {
           <div className="gtier">
             <h3>Observer (free)</h3>
             <ul>
-              <li>The full divergence board, 10-minute delayed</li>
+              <li>Top 25 pairs by gap, 10-minute delayed</li>
+              <li>Net (fee-adjusted) figures and the Live column</li>
               <li>All sorting, the ticker, the stat strip</li>
               <li>The 2-minute scan cycle</li>
+              <li>The matching audit, in full</li>
             </ul>
           </div>
           <div className="gtier">
             <h3>Founding desk ($17/month, crypto only)</h3>
             <ul>
-              <li>Live board, no delay</li>
-              <li>Gap alert thresholds you set</li>
+              <li>Live board, no delay: all matched pairs, not 25</li>
+              <li>Executable size at top of book, per pair</li>
+              <li>Gap alert thresholds you set (Telegram)</li>
               <li>Gap history charts per market</li>
               <li>API access (early)</li>
               <li>The Chrome Ledger terminal skin</li>
