@@ -11,6 +11,10 @@ import type { PMMarket } from './polymarket';
 import type { KXMarket } from './kalshi';
 
 export function polymarketUrl(m: PMMarket): string | null {
+  // Limitless-adapted legs deep-link to Limitless, not Polymarket
+  if (m.id.startsWith('lt:')) {
+    return m.slug ? `https://limitless.exchange/market/${m.slug}` : null;
+  }
   return m.slug ? `https://polymarket.com/market/${m.slug}` : null;
 }
 
