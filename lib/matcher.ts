@@ -6,8 +6,6 @@
 
 import { PMMarket, pmYesPriceChecked, pmLastPrintTs, pmTopOfBook } from './polymarket';
 import { netGapCents, pmCategory } from './fees';
-import type { LTMarket } from './limitless';
-import { limitlessUrl } from './limitless';
 import { KXMarket } from './kalshi';
 
 const STOP = new Set(`will the of in on for a an to be at by this that is are was were do does
@@ -50,25 +48,6 @@ function names(s: string): Set<string> {
   return new Set(s.match(NAME) ?? []);
 }
 
-// Limitless -> PMMarket adapter: the matcher, staleness, and drawer all
-// consume the PM shape, so LT markets wear it. The LT YES price lands in
-// outcomePrices (parsed form) and the slug becomes the deep link.
-function ltToPmShape(m: LTMarket): PMMarket {
-  return {
-    id: `lt:${m.id}`,
-    question: m.title,
-    outcomes: '["Yes","No"]',
-    outcomePrices: JSON.stringify([String(m.yesPrice ?? ''), String(1 - (m.yesPrice ?? 0))]),
-    clobTokenIds: null, // no CLOB tokens; staleness for LT legs uses the slug-keyed path
-    volume24hr: m.volume24h,
-    volume: m.volume,
-    liquidity: 0,
-    endDate: null,
-    slug: m.slug,
-    description: m.description,
-  };
-}
-
 interface PreppedSecond {
   p: PMMarket;
   toks: string[];
@@ -77,9 +56,9 @@ interface PreppedSecond {
   names: Set<string>;
   nomin: boolean;
   party: boolean;
-  tag: 'pm' | 'limitless';
+  tag: 'pm';
 }
-function prepSecond(p: PMMarket, tag: 'pm' | 'limitless'): PreppedSecond {
+function prepSecond(p: PMMarket, tag: 'pm'): PreppedSecond {
   const toks = norm(p.question);
   return {
     p, toks, tokSet: new Set(toks), joined: toks.join(' '),
@@ -116,8 +95,9 @@ export interface MatchedPair {
   // cross-venue executable size at top of book (min of the two legs, USD-notional)
   execSize: number | null;
   buyVenue: 'kalshi' | 'polymarket' | null;
-  // 'pm' (default) or 'limitless': which non-KX venue the second leg is
-  venueTag: 'pm' | 'limitless';
+  // which non-KX venue the second leg is (always 'pm'; venueTag exists so a
+  // third venue can be re-added without reshaping every consumer)
+  venueTag: 'pm';
 }
 
 const NOMIN = /\bnominee|nomination\b/i;
@@ -128,14 +108,9 @@ const PARTY = /\bparty\b/i;
 // handling: a 1-token title also qualifies when the token is a proper name.
 const MIN_SHARED = 1;
 
-export function matchVenues(kalshi: KXMarket[], polymarket: PMMarket[], limitless?: LTMarket[]): MatchedPair[] {
-  const scored: { kx: KXMarket; pm: PMMarket; s: number; tag: 'pm' | 'limitless' }[] = [];
-  // second-venue pool: real Polymarket markets plus Limitless markets adapted
-  // into PMMarket shape (id prefixed 'lt:' so dedup and links never collide).
+export function matchVenues(kalshi: KXMarket[], polymarket: PMMarket[]): MatchedPair[] {
+  const scored: { kx: KXMarket; pm: PMMarket; s: number; tag: 'pm' }[] = [];
   const pmPrepped = polymarket.map((p) => prepSecond(p, 'pm' as const));
-  for (const lt of limitless ?? []) {
-    pmPrepped.push(prepSecond(ltToPmShape(lt), 'limitless' as const));
-  }
 
   for (const k of kalshi) {
     const combined = `${k.title} ${k.eventTitle}`;
@@ -173,21 +148,16 @@ export function matchVenues(kalshi: KXMarket[], polymarket: PMMarket[], limitles
     // phrasing on the other marks a subtly different question; demote hard.
     if (kNomin !== cand.nomin) s -= 0.25;
 
-    // Limitless titles are short and generic (long-tail venue); their candidate
-    // pool needs a higher bar so vague token-overlaps don't flood the review
-    // band and burn Jev budget on obvious non-matches.
-    const minScore = cand.tag === 'limitless' ? 0.58 : 0.45;
-    if (s >= minScore) scored.push({ kx: k, pm: cand.p, s: Math.min(s, 1), tag: cand.tag });
+    if (s >= 0.45) scored.push({ kx: k, pm: cand.p, s: Math.min(s, 1), tag: cand.tag });
     }
   }
 
   scored.sort((a, b) => b.s - a.s);
   const usedK = new Set<string>(), usedP = new Set<string>(), out: MatchedPair[] = [];
   for (const { kx, pm, s, tag } of scored) {
-    if (usedK.has(kx.ticker) || usedP.has(tag + pm.id)) continue;
+    if (usedK.has(kx.ticker) || usedP.has(pm.id)) continue;
     usedK.add(kx.ticker);
-    usedP.add(tag + pm.id);
-    // Limitless YES price comes pre-parsed in the adapter's outcomePrices.
+    usedP.add(pm.id);
     const pmYes = pmYesPriceChecked(pm);
     const kxYes = kx.yesBid;
     const gapCents = kxYes !== null && pmYes !== null ? Math.abs(kxYes - pmYes) * 100 : null;
