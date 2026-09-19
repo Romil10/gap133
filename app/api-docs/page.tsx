@@ -13,16 +13,16 @@ export default function ApiDocs() {
     "gap133": {
       "type": "http",
       "url": "https://gap133-production.up.railway.app/api/mcp",
-      "headers": { "X-API-Key": "YOUR_DESK_KEY" }
+      "headers": { "X-API-Key": "<your-desk-key>" }
     }
   }
 }`;
   const curl = `curl -s https://gap133-production.up.railway.app/api/v1/pairs \\
-  -H "X-API-Key: YOUR_DESK_KEY" \\
+  -H "X-API-Key: <your-desk-key>" \\
   -d limit=5 -d minNet=1`;
   const mt = `curl -s https://gap133-production.up.railway.app/api/mcp \\
   -H "Content-Type: application/json" \\
-  -H "X-API-Key: YOUR_DESK_KEY" \\
+  -H "X-API-Key: <your-desk-key>" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call",
        "params":{"name":"biggest_gaps","arguments":{"limit":3}}}'`;
 
@@ -42,13 +42,22 @@ export default function ApiDocs() {
       </header>
 
       <section>
+        <h2>Authentication — one key</h2>
+        <p>
+          <code>&lt;your-desk-key&gt;</code> is your <b>desk key</b> — the same key that unlocks
+          the terminal (the one in your <code>/api/unlock?key=...</code> link). Paste it wherever
+          you see <code>&lt;your-desk-key&gt;</code> below. Requests without it return 401.
+        </p>
+      </section>
+
+      <section>
         <h2>REST endpoints</h2>
         <table className="ep">
           <tbody>
             <tr><td className="m">GET /api/v1/pairs</td><td>All matched pairs. Params: <code>limit</code> (max 250), <code>minNet</code> (cents), <code>ticker</code> (single pair).</td></tr>
           </tbody>
         </table>
-        <p>Auth: <code>X-API-Key</code> header (or <code>?key=</code>). Rate limit: 120 requests per 10 minutes per key.</p>
+        <p>Auth: <code>X-API-Key: &lt;your-desk-key&gt;</code> header (or <code>?key=</code>). Rate limit: 120 requests per 10 minutes per key.</p>
         <pre className="code">{curl}</pre>
         <p>Every pair object carries the venue legs with deep links, the gap block (<code>rawCents</code>, <code>netCents</code>, <code>netPositive</code>, <code>buyVenue</code>, <code>execSizeUsd</code>) and the gate block (match score, Jev probability, staleness).</p>
       </section>
