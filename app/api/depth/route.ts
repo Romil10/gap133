@@ -47,16 +47,8 @@ export async function GET(req: Request) {
   // Cross-venue executability: the gap direction decides which leg is the buy
   // (lift ask) and which is the sell (hit bid). Sizes in shares (PM) vs
   // contracts (KX) — both are 1:1 USD-notional units at settlement.
-  const kxBid = kxYesBid ? parseFloat(kxYesBid) : null;
-  const pmBidP = pmBid?.price ?? null;
-  let executable = null;
-  let direction: 'buy-kx-sell-pm' | 'buy-pm-sell-kx' | null = null;
-
-  if (kxBid !== null && pmAsk && pmYes) {
-    // If KX is cheap relative to PM: buy KX at its ask, sell at PM's bid
-    const kxAskFromQuery = null; // ask size comes from snapshot data client-side
-    direction = pmBidP !== null && kxBid < parseFloat(pmYes) ? 'buy-kx-sell-pm' : 'buy-pm-sell-kx';
-  }
+  // direction resolved client-side in DepthPanel (it owns both books)
+  const direction = kxYesBid && pmYes && pmBid?.price ? (parseFloat(kxYesBid) < parseFloat(pmYes) ? 'buy-kx-sell-pm' : 'buy-pm-sell-kx') : null;
 
   return NextResponse.json({
     pm: { bid: pmBid, ask: pmAsk },

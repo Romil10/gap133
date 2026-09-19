@@ -525,7 +525,7 @@ export default function Dashboard({ snap, unlocked }: { snap: TieredSnapshot; un
             advice or a solicitation. Markets move: verify on-venue before acting.
           </p>
           <p className="ftr-line2">
-            <a href="/guide">guide</a> · <a href="/audit">audit</a> · <a href="/privacy">privacy</a> ·{' '}
+            <a href="/guide">guide</a> · <a href="/audit">audit</a> · <a href="/api-docs">api</a> · <a href="/privacy">privacy</a> ·{' '}
             <a href="/terms">terms</a> ·{' '}
             <a href="https://t.me/gap133_alert" target="_blank" rel="noopener noreferrer" onClick={() => track('tg_click', 'footer')}>telegram</a> ·{' '}
             <a href="mailto:hello@gap133.xyz">contact</a>

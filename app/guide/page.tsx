@@ -230,7 +230,7 @@ export default function Guide() {
           <SpiralMark size={26} />
           <span>
             gap133 field guide · nothing here is trading advice or a solicitation. Data from the
-            Polymarket and Kalshi public APIs; venues own their marks. · <Link href="/">terminal</Link>
+            Polymarket and Kalshi public APIs; venues own their marks. · <Link href="/">terminal</Link> · <Link href="/api-docs">api</Link>
           </span>
         </p>
       </footer>
